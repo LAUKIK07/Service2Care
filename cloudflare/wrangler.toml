@@ -1,6 +1,8 @@
 name = "signal2care-api"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = false
 
 [vars]
 # Origins allowed to call the API from a browser (comma-separated).
@@ -9,5 +11,4 @@ ALLOWED_ORIGINS = "https://laukik07.github.io,http://localhost:8080,http://127.0
 [[d1_databases]]
 binding = "DB"
 database_name = "signal2care"
-# Replace with the id printed by `wrangler d1 create signal2care`. Local dev works with any value.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "e3216f03-3b64-4d0f-8db8-56242d05fd43"

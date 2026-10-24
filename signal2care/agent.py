@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import Settings, mask
-from .guard import FALLBACK as GUARD_FALLBACK, REWRITE_NOTE, violations
+from .guard import REWRITE_NOTE, fallback_for, violations
 from .linq import Inbound, LinqClient, LinqError
 from .llm import LLMClient, LLMError, LLMUnavailable
 from .media import ext_for, to_data_url
@@ -115,6 +115,8 @@ class Agent:
         if self.memory.pending_forget(h):
             if FORGET_CONFIRM.fullmatch(word):
                 self.memory.wipe(h)
+                if self.alerts:
+                    self.alerts.forget(h)
                 await self._say(h, FORGET_DONE_TEXT, record=True)
                 return
             self.memory.set_pending_forget(h, False)  # anything else cancels
@@ -271,7 +273,7 @@ class Agent:
             except LLMError:
                 reply = ""
             if not reply or violations(reply):
-                reply = GUARD_FALLBACK
+                reply = fallback_for(found)
 
         sent = False
         for i, part in enumerate(split_reply(reply)):

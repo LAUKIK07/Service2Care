@@ -29,18 +29,36 @@ REWRITE_NOTE = (
     "advise on medicines or doses and do not say or imply a diagnosis. If it matters, suggest talking with a clinician "
     "or pharmacist. Keep the same friendly, short style."
 )
-FALLBACK = (
-    "I can't advise on medicines or tell you what a symptom or reading means for your health, but I'm happy to go "
-    "through what the data show or help you put together questions for a clinician or pharmacist."
-)
+FALLBACKS = {
+    "diagnosis": "I can't diagnose anything or say what a reading or symptom means for your health. I can walk through what "
+                 "your data actually show, or help you write down questions for a clinician.",
+    "medicine": "I can't advise on medicines or doses. A doctor or pharmacist can tell you what is safe for you. I can still "
+                "look at your data with you or help you prepare questions for them.",
+}
+
+# A refusal that mentions the condition ("I can't say whether you have the flu") is exactly what we want.
+_NEGATION = re.compile(r"can'?t|cannot|can not|couldn'?t|won'?t|unable|not able|don'?t know|do not know|whether|\bif\b|"
+                       r"isn'?t|not a (doctor|clinician)|no way to|rule out|not (say|tell|diagnos)", re.I)
+
+
+def _asserted(pattern: re.Pattern, text: str) -> bool:
+    for m in pattern.finditer(text):
+        window = text[max(0, m.start() - 60):m.end()]
+        if not _NEGATION.search(window):
+            return True
+    return False
 
 
 def violations(text: str) -> list[str]:
     found = []
-    if _DIRECTIVE.search(text):
+    if _asserted(_DIRECTIVE, text):
         found.append("medicine_directive")
-    if _DOSE.search(text) and re.search(rf"\b({_DRUGS})\b", text, re.I):
+    if _DOSE.search(text) and re.search(rf"\b({_DRUGS})\b", text, re.I) and not _NEGATION.search(text):
         found.append("dose")
-    if _DIAGNOSIS.search(text):
+    if _asserted(_DIAGNOSIS, text):
         found.append("diagnosis")
     return found
+
+
+def fallback_for(found: list[str]) -> str:
+    return FALLBACKS["diagnosis"] if found == ["diagnosis"] else FALLBACKS["medicine"]

@@ -117,6 +117,7 @@ async function ingest(request, env) {
       continue;
     }
     const groups = {};
+    const forgets = new Set();
     const latest = { state: {}, monitor: {} };
     const statuses = {};
     for (const { k, d } of seg) {
@@ -124,6 +125,8 @@ async function ingest(request, env) {
       if (k === "state" || k === "monitor") {
         const p = personaOf(d);
         if (p) latest[k][p] = d;
+      } else if (k === "forget") {
+        if (personaOf(d)) forgets.add(d.persona);
       } else if (k === "alert_status") {
         if (Number.isInteger(d.id)) statuses[d.id] = String(d.status).slice(0, 20);
       } else if (k === "setting") {
@@ -149,6 +152,13 @@ async function ingest(request, env) {
         stmts.push(db.prepare(BULK[k]).bind(JSON.stringify(groups[k])));
         if (k !== "series" && k !== "feed") revBump = true;
       }
+    }
+    for (const p of forgets) {
+      // What the person said is erased. The system's own alert texts and the synthetic series stay.
+      stmts.push(db.prepare("DELETE FROM annotations WHERE persona=?1").bind(p));
+      stmts.push(db.prepare("DELETE FROM thread WHERE mid NOT LIKE 'alert-%' AND alert_id IN (SELECT id FROM alerts WHERE persona=?1)").bind(p));
+      stmts.push(db.prepare("DELETE FROM feed WHERE persona=?1 AND kind='annotation'").bind(p));
+      revBump = true;
     }
     for (const [p, d] of Object.entries(latest.state)) {
       stmts.push(db.prepare("INSERT OR REPLACE INTO state(persona,data,updated_at) VALUES(?1,?2,?3)").bind(p, JSON.stringify(d), now));

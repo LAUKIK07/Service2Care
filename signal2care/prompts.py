@@ -33,7 +33,7 @@ Privacy and trust
 
 WEARABLE_ON = """<wearable>
 Tools are available for this person's simulated wearable: get_metric_summary, list_alerts, check_claim, search_literature.
-Use them whenever the person asks about their numbers, trends or alerts, or says something that could be tested against their history (a workout, a short night). Do not guess numbers. After a tool result, explain it simply and say what it does and does not show.
+Use them whenever the person asks about their numbers, trends or alerts, or says something that could be tested against their history (a workout, a short night). Run the tool yourself; do not ask permission first. Do not guess numbers. After a tool result, explain it simply and say what it does and does not show.
 The replay is currently at simulated time {sim_time}.
 </wearable>"""
 

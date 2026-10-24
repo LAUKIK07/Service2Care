@@ -16,6 +16,7 @@ import asyncio
 import json
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 
 from . import claims
@@ -55,6 +56,8 @@ ONGOING_COOLDOWN_H = 12
 SPACING_MIN = 180          # one text per change, not one per metric
 OPEN_HOLD_H = 12           # while a text is still unresolved, new non-extreme findings wait
 DAILY_CAP = 3
+REVIEW_GAP_S = 3.0         # at fast replay speeds the model reviews sample the stream instead of paying per simulated hour
+NOTE_GAP_S = 8.0
 # Percent of a Celsius reading or of a percentage is not meaningful, so these are told as differences.
 ABS_DIFF = {"skin_temp": "°C", "spo2": " percentage points"}
 FLOOR_Z = 7.0
@@ -94,6 +97,14 @@ class AlertEngine:
         self._locks: dict[str, asyncio.Lock] = {}
         self._annotating: set[int] = set()
         self._tasks: set[asyncio.Task] = set()
+        self._last_wall: dict[tuple, float] = {}
+
+    def _due(self, persona: str, kind: str, gap: float) -> bool:
+        now, key = time.monotonic(), (persona, kind)
+        if now - self._last_wall.get(key, -1e9) < gap:
+            return False
+        self._last_wall[key] = now
+        return True
 
     # ---------------------------------------------------------------- settings
     def get_setting(self, key: str, default: str = "") -> str:
@@ -132,7 +143,7 @@ class AlertEngine:
     # ----------------------------------------------------------- hourly review
     async def review_hour(self, persona: str, tick: dict, mon: Monitor) -> None:
         """Every completed hour Jev looks at the most deviating metric, even if nothing fired. This is the 'always watching' log."""
-        if not self.jev or not mon.last_review or tick["ts"][14:16] != "45":
+        if not self.jev or not mon.last_review or tick["ts"][14:16] != "45" or not self._due(persona, "review", REVIEW_GAP_S):
             return
         m, o = max(mon.last_review.items(), key=lambda kv: abs(kv[1]["z"]))
         state = self._jev_state(None, m, o["value"], o["median"], o["z"], 1, o["state"], "good", [], 0, False, "review")
@@ -149,7 +160,7 @@ class AlertEngine:
 
     async def note_period(self, persona: str, tick: dict, mon: Monitor) -> None:
         """Every 6 simulated hours the language model writes a one-line observation from computed numbers."""
-        if tick["ts"][14:16] != "45" or int(tick["ts"][11:13]) % 6 != 5 or not mon.last_review:
+        if tick["ts"][14:16] != "45" or int(tick["ts"][11:13]) % 6 != 5 or not mon.last_review or not self._due(persona, "note", NOTE_GAP_S):
             return
         top = sorted(mon.last_review.items(), key=lambda kv: abs(kv[1]["z"]), reverse=True)[:4]
         digest = [{"metric": LABEL.get(m, m), "z": round(o["z"], 1), "value": round(o["value"], 1), "baseline": round(o["median"], 1),
@@ -395,8 +406,20 @@ class AlertEngine:
                 f"Metric: {LABEL.get(ev['metric'], ev['metric'])}. Latest {ev['value']} {UNIT.get(ev['metric'], '')} vs usual "
                 f"{ev['baseline']} ({ev['pct']:+.1f}%), {ev['z']:+.1f} robust z, lasting about {ev['persistence_h']} h, simulated time {ev['ts']}. "
                 f"Decision: {dec.get('action')} (p {dec.get('p_alert')}). You asked: {alert['text']}\n"
-                "Listen first. Acknowledge what they say. Use tools to check numbers or test what they describe against their own history. "
-                "Describe what the data shows, never what caused it.\n</open_alert>")
+                "Listen first and acknowledge what they say. If they mention a possible reason such as a workout or a bad night, call check_claim "
+                "straight away (do not ask permission) and tell them what it shows in plain words. Describe what the data shows, never what caused it.\n</open_alert>")
+
+    def forget(self, handle: str) -> None:
+        """'Forget everything': remove what the person said about alerts, here and on the dashboard service."""
+        persona = self.persona_for(handle)
+        if not persona:
+            return
+        with self.db.conn() as c:
+            c.execute("DELETE FROM annotations WHERE persona=?", (persona,))
+            c.execute("DELETE FROM feed WHERE persona=? AND kind='annotation'", (persona,))
+            c.execute("UPDATE alerts SET message_id=NULL, closed_at=COALESCE(closed_at, ?) WHERE persona=? AND handle=?",
+                      (now_iso(), persona, handle))
+        self.sync.push("forget", {"persona": persona})
 
     def after_reply(self, handle: str) -> None:
         alert = self.open_for(handle)
@@ -423,8 +446,11 @@ class AlertEngine:
                 start = c.execute("SELECT rowid FROM messages WHERE id=?", (a["message_id"],)).fetchone()
                 if not start:
                     return
-                msgs = c.execute("SELECT id,direction,text,created_at FROM messages WHERE handle=? AND rowid>=? ORDER BY rowid",
-                                 (a["handle"], start["rowid"])).fetchall()
+                # The thread ends where the next alert text begins, so replies to a later alert never leak into this one.
+                nxt = c.execute("SELECT m.rowid AS r FROM alerts l JOIN messages m ON m.id=l.message_id "
+                                "WHERE l.handle=? AND l.id>? ORDER BY l.id LIMIT 1", (a["handle"], alert_id)).fetchone()
+                msgs = c.execute("SELECT id,direction,text,created_at FROM messages WHERE handle=? AND rowid>=? AND rowid<? ORDER BY rowid",
+                                 (a["handle"], start["rowid"], nxt["r"] if nxt else 1 << 62)).fetchall()
             if not any(m["direction"] == "in" for m in msgs):
                 return
             for m in msgs[1:]:                                   # the first row is the alert message itself
@@ -433,10 +459,13 @@ class AlertEngine:
             ev = json.loads(a["evidence"])
             transcript = "\n".join(f"{'PERSON' if m['direction'] == 'in' else 'ASSISTANT'}: {m['text'][:600]}" for m in msgs)[-6000:]
             prompt = [
-                {"role": "system", "content": "You write a factual annotation for a time-series chart from a short chat about a wearable alert. "
-                 "Return JSON only: {\"summary\": str (max 240 chars, third person, what the person reported, no causes asserted), "
-                 "\"factors\": [one or more of workout, poor_sleep, caffeine, alcohol, stress, illness, travel, medication, device_fit, hydration, other], "
-                 "\"resolved\": bool (true if the conversation reached a natural end)}. Only include factors the person actually mentioned."},
+                {"role": "system", "content": "You write a factual annotation for a time-series chart from a chat that followed a wearable alert. "
+                 "Return JSON only: {\"relevant\": bool (true ONLY if the PERSON said something about how they feel, what they did, or what might explain the alert; "
+                 "questions about other topics or about their numbers do not count), "
+                 "\"summary\": str (max 240 chars, third person, only what the PERSON reported, never what the assistant said, no causes asserted), "
+                 "\"factors\": [zero or more of workout, poor_sleep, caffeine, alcohol, stress, illness, travel, medication, device_fit, hydration, other], "
+                 "\"resolved\": bool (true ONLY if the person says it is fine or sorted, or clearly ends the topic)}. "
+                 "Only include factors the person actually mentioned."},
                 {"role": "user", "content": f"ALERT: {LABEL.get(ev['metric'], ev['metric'])} {ev['value']} vs usual {ev['baseline']} at {ev['ts']}\nCHAT:\n{transcript}"},
             ]
             try:
@@ -444,6 +473,8 @@ class AlertEngine:
                 data = extract_json(text)
             except (LLMError, ValueError):
                 return
+            if not data.get("relevant"):
+                return                                           # small talk or an unrelated question: nothing to attach
             summary = str(data.get("summary") or "")[:300]
             factors = [f for f in (data.get("factors") or []) if isinstance(f, str)][:4]
             computed = self._compute(a["persona"], ev, factors)
