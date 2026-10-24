@@ -1,0 +1,46 @@
+{
+ "_note": "The linked person's own health notes (a snapshot). Phrased by the dashboard as notes the person gave.",
+ "items": [
+  {
+   "k": "profile",
+   "d": {
+    "persona": "maya",
+    "items": [
+     {
+      "key": "lung_note",
+      "label": "Lung note",
+      "value": "Mild asthma, uses an inhaler before hard runs",
+      "origin": "onboarding",
+      "at": "@NOW-3h"
+     },
+     {
+      "key": "allergies",
+      "label": "Allergies",
+      "value": "Pollen in spring",
+      "origin": "correction",
+      "at": "@NOW-2h"
+     },
+     {
+      "key": "medicines",
+      "label": "Medicines",
+      "value": "Inhaler as needed (read from a photo of the label)",
+      "origin": "photo",
+      "at": "@NOW-90m"
+     },
+     {
+      "key": "bedtime",
+      "label": "Usual bedtime",
+      "value": "About 11 pm",
+      "origin": "chat",
+      "at": "@NOW-30m"
+     }
+    ],
+    "flags": [
+     "lung_condition",
+     "allergies",
+     "past_surgery"
+    ]
+   }
+  }
+ ]
+}

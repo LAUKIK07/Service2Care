@@ -1,0 +1,739 @@
+{
+ "_note": "Maya's alerts and stories. 101 resolved gap; 102 CLOSED story with two versions and a receipt; 103 OPEN story (window closes ~6 minutes after load); 104-116 cover every other status. Times written as @NOW+/-N(s|m|h) are replaced by the loader.",
+ "items": [
+  {
+   "k": "alert",
+   "d": {
+    "id": 101,
+    "persona": "maya",
+    "kind": "gap",
+    "metric": "data_quality",
+    "family": "device",
+    "ts": "2026-10-15T14:45",
+    "started": "2026-10-15T12:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"gap\", \"metric\": \"data_quality\", \"ts\": \"2026-10-15T14:45\", \"state\": \"awake\", \"value\": 0.0, \"baseline\": 1.0, \"scale\": 1.0, \"z\": -9.0, \"pct\": -100.0, \"persistence_h\": 2, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-15T12:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610151245-data_quality\", \"metric\": \"data_quality\", \"kind\": \"gap\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-15T12:45\", \"detected\": \"2026-10-15T14:45\", \"hours\": 2, \"quality\": \"good\"}, \"readings\": [], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 1.0, \"scale\": 1.0, \"samples\": 0}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": -9.0, \"percent_change\": -100.0}, \"rule\": \"no usable samples for 2 hours\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610151245-data_quality\"}",
+    "decision": "{\"source\": \"rules\", \"action\": \"alert_now\", \"send\": true, \"reason\": \"tracker silent\", \"p_alert\": 1.0, \"confidence\": 1.0, \"model\": \"rules-v1\", \"floor\": false}",
+    "status": "resolved",
+    "text": "Signal2Care (demo data): Your tracker hasn't sent usable data for about 2 hours. Is your tracker on and sitting snugly?",
+    "sent_at": "@NOW-5h",
+    "closed_at": null,
+    "created_at": "@NOW-5h",
+    "event_id": "evt-maya-202610151245-data_quality"
+   }
+  },
+  {
+   "k": "annotation",
+   "d": {
+    "alert_id": 101,
+    "persona": "maya",
+    "metric": "data_quality",
+    "start_ts": "2026-10-15T12:45",
+    "end_ts": "2026-10-15T14:45",
+    "summary": "The person said the tracker was on the charger and they forgot to put it back on.",
+    "factors": "[\"device_fit\"]",
+    "computed": "[{\"factor\": \"device_fit\", \"verdict\": \"not_measurable\", \"note\": \"The tracker has no channel that can confirm or rule this out.\"}]",
+    "created_at": "@NOW-5h",
+    "updated_at": "@NOW-290m",
+    "event_id": "evt-maya-202610151245-data_quality",
+    "status": "closed",
+    "opened_at": "@NOW-5h",
+    "closes_at": "@NOW-290m",
+    "qa": "[{\"q\": \"Is your tracker on and sitting snugly?\", \"a\": \"It was on the charger, I forgot to put it back on\", \"at\": \"@NOW-298m\"}]",
+    "versions": "[{\"v\": 1, \"kind\": \"from_data\", \"text\": \"The tracker sent no usable readings for about 2 hours.\", \"at\": \"@NOW-5h\", \"changed\": false, \"basis\": {\"signature\": []}}]"
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 101,
+    "mid": "alert-101",
+    "direction": "out",
+    "text": "Signal2Care (demo data): Your tracker hasn't sent usable data for about 2 hours. Is your tracker on and sitting snugly?",
+    "kind": "alert",
+    "created_at": "@NOW-5h",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 101,
+    "mid": "m101-in",
+    "direction": "in",
+    "text": "It was on the charger, I forgot to put it back on",
+    "kind": "reply_in",
+    "created_at": "@NOW-298m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 101,
+    "mid": "m101-close",
+    "direction": "out",
+    "text": "Saved to your record: the tracker was charging. Nothing else to check.",
+    "kind": "closing",
+    "created_at": "@NOW-290m",
+    "options": null
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 101,
+    "status": "resolved"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 102,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "skin_temp",
+    "family": "temperature",
+    "ts": "2026-10-20T12:45",
+    "started": "2026-10-20T10:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"skin_temp\", \"ts\": \"2026-10-20T12:45\", \"state\": \"awake\", \"value\": 34.04, \"baseline\": 33.27, \"scale\": 0.17, \"z\": 4.5, \"pct\": 2.3, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-20T10:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610201045-skin_temp\", \"metric\": \"skin_temp\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-20T10:45\", \"detected\": \"2026-10-20T12:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-20T09\", \"median\": 33.47, \"samples\": 4}, {\"hour\": \"2026-10-20T10\", \"median\": 33.67, \"samples\": 4}, {\"hour\": \"2026-10-20T11\", \"median\": 33.87, \"samples\": 4}, {\"hour\": \"2026-10-20T12\", \"median\": 34.04, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 33.27, \"scale\": 0.17, \"samples\": 76}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 4.5, \"percent_change\": 2.3}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610201045-skin_temp\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.93, \"confidence\": 0.84, \"model\": \"typesafe/jev-1.14\", \"floor\": false, \"question\": {\"question_kind\": \"warm_or_hot\", \"source\": \"jev\", \"confidence\": 0.78, \"options\": [\"Warmer than usual\", \"Been somewhere hot\", \"Worked out\", \"Not sure\"]}}",
+    "status": "resolved",
+    "text": "Signal2Care (demo data): Your skin temperature is 34 °C, which is 0.8 °C above your usual 33.3 °C for the last 3 hours. Are you feeling warmer than usual, or have you been somewhere hot?",
+    "sent_at": "@NOW-80m",
+    "closed_at": null,
+    "created_at": "@NOW-80m",
+    "event_id": "evt-maya-202610201045-skin_temp"
+   }
+  },
+  {
+   "k": "annotation",
+   "d": {
+    "alert_id": 102,
+    "persona": "maya",
+    "metric": "skin_temp",
+    "start_ts": "2026-10-20T10:45",
+    "end_ts": "2026-10-20T12:45",
+    "summary": "The person said they ran hard late in the morning and it was warm out. The rise is within what their runs usually produce.",
+    "factors": "[\"workout\", \"poor_sleep\"]",
+    "computed": "[{\"factor\": \"workout\", \"verdict\": \"within_typical_range\", \"typical_shift\": 0.7, \"observed_shift\": 0.8}, {\"factor\": \"poor_sleep\", \"verdict\": \"weak_relationship\", \"r\": 0.12}, {\"factor\": \"pattern\", \"metrics_checked\": 5, \"metrics_in_direction\": 2}]",
+    "created_at": "@NOW-80m",
+    "updated_at": "@NOW-70m",
+    "event_id": "evt-maya-202610201045-skin_temp",
+    "status": "closed",
+    "opened_at": "@NOW-80m",
+    "closes_at": "@NOW-70m",
+    "qa": "[{\"q\": \"Are you feeling warmer than usual, or have you been somewhere hot?\", \"a\": \"I did a hard run late morning and it was really warm out\", \"at\": \"@NOW-77m\"}, {\"q\": \"Did you sleep worse than usual last night?\", \"a\": \"No, I slept fine\", \"at\": \"@NOW-75m\"}]",
+    "versions": "[{\"v\": 1, \"kind\": \"from_data\", \"text\": \"Skin temperature is 0.8 \\u00b0C above your usual for 3 hours. The data alone does not say why.\", \"at\": \"@NOW-80m\", \"changed\": false, \"basis\": {\"signature\": []}}, {\"v\": 2, \"kind\": \"recheck\", \"text\": \"The rise is within what your workouts usually produce (typical +0.7 \\u00b0C, seen +0.8 \\u00b0C).\", \"at\": \"@NOW-77m\", \"changed\": true, \"basis\": {\"signature\": [\"workout\"], \"note\": \"you said you ran late this morning\"}, \"before\": \"Skin temperature is 0.8 \\u00b0C above your usual for 3 hours. The data alone does not say why.\"}]"
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "alert-102",
+    "direction": "out",
+    "text": "Signal2Care (demo data): Your skin temperature is 34 °C, which is 0.8 °C above your usual 33.3 °C for the last 3 hours. Are you feeling warmer than usual, or have you been somewhere hot?\n[card image]",
+    "kind": "alert",
+    "created_at": "@NOW-80m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-q",
+    "direction": "out",
+    "text": "Are you feeling warmer than usual, or have you been somewhere hot?",
+    "kind": "question",
+    "created_at": "@NOW-79m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-poll",
+    "direction": "out",
+    "text": "[poll] Warmer than usual | Been somewhere hot | Worked out | Not sure",
+    "kind": "poll",
+    "created_at": "@NOW-78m",
+    "options": [
+     "Warmer than usual",
+     "Been somewhere hot",
+     "Worked out",
+     "Not sure"
+    ]
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-in1",
+    "direction": "in",
+    "text": "I did a hard run late morning and it was really warm out",
+    "kind": "reply_in",
+    "created_at": "@NOW-77m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-r1",
+    "direction": "out",
+    "text": "Thanks, that helps. I'll compare it with your earlier runs.",
+    "kind": "reply",
+    "created_at": "@NOW-77m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-upd",
+    "direction": "out",
+    "text": "What changed. Before: Skin temperature is 0.8 °C above your usual for 3 hours. The data alone does not say why. Now: The rise is within what your workouts usually produce (typical +0.7 °C, seen +0.8 °C).",
+    "kind": "update",
+    "created_at": "@NOW-76m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-q2",
+    "direction": "out",
+    "text": "Did you sleep worse than usual last night?",
+    "kind": "question",
+    "created_at": "@NOW-76m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-in2",
+    "direction": "in",
+    "text": "No, I slept fine",
+    "kind": "reply_in",
+    "created_at": "@NOW-75m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-exp",
+    "direction": "out",
+    "text": "I checked this against your 6 earlier workouts. The numbers come from your own history, not from a population average.",
+    "kind": "explain",
+    "created_at": "@NOW-74m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-close",
+    "direction": "out",
+    "text": "Saved to your record: you ran this morning and the rise is within your usual response to a run. If you feel unwell, or it keeps going, talk to your care team.\n[card image]",
+    "kind": "closing",
+    "created_at": "@NOW-70m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 102,
+    "mid": "m102-sys",
+    "direction": "out",
+    "text": "Conversation closed after 10 minutes.",
+    "kind": "system",
+    "created_at": "@NOW-70m",
+    "options": null
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 102,
+    "status": "resolved"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 103,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "respiratory_rate",
+    "family": "breathing",
+    "ts": "2026-10-21T10:45",
+    "started": "2026-10-21T08:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"respiratory_rate\", \"ts\": \"2026-10-21T10:45\", \"state\": \"awake\", \"value\": 18.1, \"baseline\": 16.0, \"scale\": 0.445, \"z\": 4.7, \"pct\": 13.1, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-21T08:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610210845-respiratory_rate\", \"metric\": \"respiratory_rate\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-21T08:45\", \"detected\": \"2026-10-21T10:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-21T07\", \"median\": 17.4, \"samples\": 4}, {\"hour\": \"2026-10-21T08\", \"median\": 17.5, \"samples\": 4}, {\"hour\": \"2026-10-21T09\", \"median\": 17.5, \"samples\": 4}, {\"hour\": \"2026-10-21T10\", \"median\": 18.1, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 16.0, \"scale\": 0.445, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 4.7, \"percent_change\": 13.1}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610210845-respiratory_rate\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.88, \"confidence\": 0.79, \"model\": \"typesafe/jev-1.14\", \"floor\": false, \"question\": {\"question_kind\": \"cold_or_cough\", \"source\": \"jev\", \"confidence\": 0.71, \"options\": [\"Yes\", \"No\", \"Prefer not to say\"]}}",
+    "status": "discussed",
+    "text": "Signal2Care (demo data): Your breathing rate is 18.1 breaths a minute, above your usual 16.0 for about 3 hours. Have you had a cold, a cough, or any trouble breathing lately?",
+    "sent_at": "@NOW-4m",
+    "closed_at": null,
+    "created_at": "@NOW-4m",
+    "event_id": "evt-maya-202610210845-respiratory_rate"
+   }
+  },
+  {
+   "k": "annotation",
+   "d": {
+    "alert_id": 103,
+    "persona": "maya",
+    "metric": "respiratory_rate",
+    "start_ts": "2026-10-21T08:45",
+    "end_ts": "2026-10-21T10:45",
+    "summary": "",
+    "factors": "[\"illness\"]",
+    "computed": "[{\"factor\": \"illness\", \"verdict\": \"not_measurable\"}]",
+    "created_at": "@NOW-4m",
+    "updated_at": "@NOW-2m",
+    "event_id": "evt-maya-202610210845-respiratory_rate",
+    "status": "open",
+    "opened_at": "@NOW-4m",
+    "closes_at": "@NOW+6m",
+    "qa": "[{\"q\": \"Have you had a cold, a cough, or any trouble breathing lately?\", \"a\": \"Maybe a little stuffy since last night\", \"at\": \"@NOW-2m\"}]",
+    "versions": "[{\"v\": 1, \"kind\": \"from_data\", \"text\": \"Respiratory rate is 2.1 breaths a minute above your usual for 3 hours. The data alone does not say why.\", \"at\": \"@NOW-4m\", \"changed\": false, \"basis\": {\"signature\": []}}]"
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 103,
+    "mid": "alert-103",
+    "direction": "out",
+    "text": "Signal2Care (demo data): Your breathing rate is 18.1 breaths a minute, above your usual 16.0 for about 3 hours. Have you had a cold, a cough, or any trouble breathing lately?\n[card image]",
+    "kind": "alert",
+    "created_at": "@NOW-4m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 103,
+    "mid": "m103-q",
+    "direction": "out",
+    "text": "Have you had a cold, a cough, or any trouble breathing lately?",
+    "kind": "question",
+    "created_at": "@NOW-230s",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 103,
+    "mid": "m103-poll",
+    "direction": "out",
+    "text": "[poll] Yes | No | Prefer not to say",
+    "kind": "poll",
+    "created_at": "@NOW-220s",
+    "options": [
+     "Yes",
+     "No",
+     "Prefer not to say"
+    ]
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 103,
+    "mid": "m103-in1",
+    "direction": "in",
+    "text": "Maybe a little stuffy since last night",
+    "kind": "reply_in",
+    "created_at": "@NOW-2m",
+    "options": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 103,
+    "mid": "m103-r1",
+    "direction": "out",
+    "text": "Thanks for telling me. I'll keep this in your record. Anything else you've noticed, like a cough or a fever?",
+    "kind": "reply",
+    "created_at": "@NOW-2m",
+    "options": null
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 103,
+    "status": "discussed"
+   }
+  },
+  {
+   "k": "feed",
+   "d": {
+    "id": 9103,
+    "persona": "maya",
+    "ts": "2026-10-21T10:45",
+    "actor": "alert",
+    "kind": "awaiting_reply",
+    "text": "Waiting for a reply to Respiratory rate (event evt-maya-202610210845-respiratory_rate)",
+    "data": {
+     "alert_id": 103
+    },
+    "created_at": "@NOW-4m"
+   }
+  },
+  {
+   "k": "feed",
+   "d": {
+    "id": 9102,
+    "persona": "maya",
+    "ts": "2026-10-20T12:45",
+    "actor": "llm",
+    "kind": "annotation",
+    "text": "Linked the conversation to the chart: The person said they ran hard late in the morning.",
+    "data": {
+     "alert_id": 102
+    },
+    "created_at": "@NOW-70m"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 104,
+    "persona": "maya",
+    "kind": "daily",
+    "metric": "rhr_sleep",
+    "family": "heart",
+    "ts": "2026-10-22T07:15",
+    "started": "2026-10-21T23:00",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"daily\", \"metric\": \"rhr_sleep\", \"ts\": \"2026-10-22T07:15\", \"state\": \"awake\", \"value\": 58.0, \"baseline\": 52.0, \"scale\": 1.6, \"z\": 3.9, \"pct\": 11.5, \"persistence_h\": 1, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-21T23:00\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610212300-rhr_sleep\", \"metric\": \"rhr_sleep\", \"kind\": \"daily\", \"context\": \"sleep\", \"window\": {\"started\": \"2026-10-21T23:00\", \"detected\": \"2026-10-22T07:15\", \"hours\": 1, \"quality\": \"good\"}, \"readings\": [], \"baseline\": {\"definition\": \"median of this person's earlier nights\", \"median\": 52.0, \"scale\": 1.6, \"samples\": 20}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 3.9, \"percent_change\": 11.5}, \"rule\": \"a nightly value at least 3.5 robust z from this person's earlier nights\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610212300-rhr_sleep\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.74, \"confidence\": 0.7, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "held_quiet",
+    "text": "Signal2Care (demo data): Your resting heart rate last night was 58 bpm, above your usual 52. Anything different about yesterday?",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610212300-rhr_sleep"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 105,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "hrv_rmssd",
+    "family": "heart",
+    "ts": "2026-10-23T09:45",
+    "started": "2026-10-23T07:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"hrv_rmssd\", \"ts\": \"2026-10-23T09:45\", \"state\": \"awake\", \"value\": 31.0, \"baseline\": 42.0, \"scale\": 3.0, \"z\": -3.7, \"pct\": -26.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-23T07:45\", \"ongoing\": false, \"co\": []}",
+    "decision": "{\"reason\": \"same signal alerted less than 12 hours ago\"}",
+    "status": "suppressed",
+    "text": null,
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": null
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 106,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "heart_rate",
+    "family": "heart",
+    "ts": "2026-10-24T11:45",
+    "started": "2026-10-24T09:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"heart_rate\", \"ts\": \"2026-10-24T11:45\", \"state\": \"awake\", \"value\": 88.0, \"baseline\": 66.0, \"scale\": 4.0, \"z\": 5.5, \"pct\": 33.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-24T09:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610240945-heart_rate\", \"metric\": \"heart_rate\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-24T09:45\", \"detected\": \"2026-10-24T11:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-24T11\", \"median\": 88.0, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 66.0, \"scale\": 4.0, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 5.5, \"percent_change\": 33.0}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610240945-heart_rate\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.9, \"confidence\": 0.8, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "held_paused",
+    "text": "Signal2Care (demo data): Your heart rate has been around 88 bpm for 3 hours, above your usual 66. Is this a workout or something else?",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610240945-heart_rate"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 107,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "spo2",
+    "family": "breathing",
+    "ts": "2026-10-25T02:45",
+    "started": "2026-10-25T00:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"spo2\", \"ts\": \"2026-10-25T02:45\", \"state\": \"awake\", \"value\": 94.6, \"baseline\": 97.2, \"scale\": 0.5, \"z\": -5.2, \"pct\": -2.7, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-25T00:45\", \"ongoing\": false, \"co\": []}",
+    "decision": "{\"source\": \"jev\", \"action\": \"watch\", \"send\": false, \"p_alert\": 0.41, \"confidence\": 0.6, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "watching",
+    "text": null,
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": null
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 108,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "stress",
+    "family": "stress",
+    "ts": "2026-10-26T16:45",
+    "started": "2026-10-26T14:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"stress\", \"ts\": \"2026-10-26T16:45\", \"state\": \"awake\", \"value\": 7.4, \"baseline\": 3.1, \"scale\": 0.7, \"z\": 6.1, \"pct\": 138.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-26T14:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610261445-stress\", \"metric\": \"stress\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-26T14:45\", \"detected\": \"2026-10-26T16:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-26T16\", \"median\": 7.4, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 3.1, \"scale\": 0.7, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 6.1, \"percent_change\": 138.0}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610261445-stress\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.82, \"confidence\": 0.75, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "held_open_story",
+    "text": "Signal2Care (demo data): Your stress score is 7.4, well above your usual 3.1 for 3 hours. Has it been a tense afternoon?",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610261445-stress"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 109,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "respiratory_rate",
+    "family": "breathing",
+    "ts": "2026-10-26T19:45",
+    "started": "2026-10-26T17:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"respiratory_rate\", \"ts\": \"2026-10-26T19:45\", \"state\": \"awake\", \"value\": 17.6, \"baseline\": 16.0, \"scale\": 0.445, \"z\": 3.6, \"pct\": 10.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-26T17:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610261745-respiratory_rate\", \"metric\": \"respiratory_rate\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-26T17:45\", \"detected\": \"2026-10-26T19:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-26T19\", \"median\": 17.6, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 16.0, \"scale\": 0.445, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 3.6, \"percent_change\": 10.0}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610261745-respiratory_rate\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.7, \"confidence\": 0.65, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "held_rate",
+    "text": "Signal2Care (demo data): Your breathing rate is up again, 17.6 against your usual 16.0. Still feeling stuffy?",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610261745-respiratory_rate"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 110,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "eda",
+    "family": "stress",
+    "ts": "2026-10-27T10:45",
+    "started": "2026-10-27T08:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"eda\", \"ts\": \"2026-10-27T10:45\", \"state\": \"awake\", \"value\": 4.9, \"baseline\": 2.1, \"scale\": 0.4, \"z\": 7.0, \"pct\": 133.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T08:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610270845-eda\", \"metric\": \"eda\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-27T08:45\", \"detected\": \"2026-10-27T10:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-27T10\", \"median\": 4.9, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 2.1, \"scale\": 0.4, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 7.0, \"percent_change\": 133.0}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610270845-eda\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.85, \"confidence\": 0.77, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "held_consent",
+    "text": "Signal2Care (demo data): Your sweat response is high, 4.9 against your usual 2.1.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610270845-eda"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 111,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "bp_sys",
+    "family": "cardio",
+    "ts": "2026-10-27T14:45",
+    "started": "2026-10-27T12:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"bp_sys\", \"ts\": \"2026-10-27T14:45\", \"state\": \"awake\", \"value\": 138.0, \"baseline\": 118.0, \"scale\": 4.0, \"z\": 5.0, \"pct\": 17.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T12:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610271245-bp_sys\", \"metric\": \"bp_sys\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-27T12:45\", \"detected\": \"2026-10-27T14:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-27T14\", \"median\": 138.0, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 118.0, \"scale\": 4.0, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 5.0, \"percent_change\": 17.0}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610271245-bp_sys\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.87, \"confidence\": 0.8, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "send_failed",
+    "text": "Signal2Care (demo data): Your blood pressure is 138 systolic, above your usual 118.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610271245-bp_sys"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 112,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "skin_temp",
+    "family": "temperature",
+    "ts": "2026-10-27T18:45",
+    "started": "2026-10-27T16:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"skin_temp\", \"ts\": \"2026-10-27T18:45\", \"state\": \"awake\", \"value\": 34.0, \"baseline\": 33.3, \"scale\": 0.17, \"z\": 4.1, \"pct\": 2.1, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T16:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610271645-skin_temp\", \"metric\": \"skin_temp\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-27T16:45\", \"detected\": \"2026-10-27T18:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-27T18\", \"median\": 34.0, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 33.3, \"scale\": 0.17, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 4.1, \"percent_change\": 2.1}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610271645-skin_temp\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.7, \"confidence\": 0.7, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "digested",
+    "text": "Signal2Care (demo data): skin temperature is up again.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610271645-skin_temp"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 113,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "skin_temp",
+    "family": "temperature",
+    "ts": "2026-10-27T20:45",
+    "started": "2026-10-27T18:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"skin_temp\", \"ts\": \"2026-10-27T20:45\", \"state\": \"awake\", \"value\": 34.1, \"baseline\": 33.3, \"scale\": 0.17, \"z\": 4.7, \"pct\": 2.4, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T18:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610271845-skin_temp\", \"metric\": \"skin_temp\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-27T18:45\", \"detected\": \"2026-10-27T20:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-27T20\", \"median\": 34.1, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 33.3, \"scale\": 0.17, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 4.7, \"percent_change\": 2.4}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610271845-skin_temp\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.72, \"confidence\": 0.7, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "cancelled",
+    "text": "Signal2Care (demo data): skin temperature is high.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610271845-skin_temp"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 114,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "skin_temp",
+    "family": "temperature",
+    "ts": "2026-10-27T22:45",
+    "started": "2026-10-27T20:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"skin_temp\", \"ts\": \"2026-10-27T22:45\", \"state\": \"awake\", \"value\": 34.0, \"baseline\": 33.3, \"scale\": 0.17, \"z\": 4.3, \"pct\": 2.1, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T20:45\", \"ongoing\": false, \"co\": [], \"receipt\": {\"event_id\": \"evt-maya-202610272045-skin_temp\", \"metric\": \"skin_temp\", \"kind\": \"hourly\", \"context\": \"awake\", \"window\": {\"started\": \"2026-10-27T20:45\", \"detected\": \"2026-10-27T22:45\", \"hours\": 3, \"quality\": \"good\"}, \"readings\": [{\"hour\": \"2026-10-27T22\", \"median\": 34.0, \"samples\": 4}], \"baseline\": {\"definition\": \"median of this person's earlier readings in the same context (asleep, or awake at this time of day)\", \"median\": 33.3, \"scale\": 0.17, \"samples\": 80}, \"calculation\": {\"formula\": \"z = (reading - median) / scale\", \"z\": 4.3, \"percent_change\": 2.1}, \"rule\": \"a robust z of at least 4.5 for 3 hours, 5 for 2 hours, or 7 for 1 hour\", \"source\": \"Seeded physiology simulator\", \"persona\": \"maya\", \"synthetic\": true}, \"event_id\": \"evt-maya-202610272045-skin_temp\"}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.7, \"confidence\": 0.7, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "expired",
+    "text": "Signal2Care (demo data): skin temperature is high.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": "evt-maya-202610272045-skin_temp"
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 115,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "heart_rate",
+    "family": "heart",
+    "ts": "2026-10-28T01:45",
+    "started": "2026-10-27T23:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"heart_rate\", \"ts\": \"2026-10-28T01:45\", \"state\": \"awake\", \"value\": 72.0, \"baseline\": 66.0, \"scale\": 4.0, \"z\": 1.5, \"pct\": 9.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-27T23:45\", \"ongoing\": false, \"co\": []}",
+    "decision": "{\"source\": \"jev\", \"action\": \"ignore\", \"send\": false, \"p_alert\": 0.12, \"confidence\": 0.8, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "ignored",
+    "text": null,
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": null
+   }
+  },
+  {
+   "k": "alert",
+   "d": {
+    "id": 116,
+    "persona": "maya",
+    "kind": "hourly",
+    "metric": "hrv_rmssd",
+    "family": "heart",
+    "ts": "2026-10-28T04:45",
+    "started": "2026-10-28T02:45",
+    "evidence": "{\"persona\": \"maya\", \"kind\": \"hourly\", \"metric\": \"hrv_rmssd\", \"ts\": \"2026-10-28T04:45\", \"state\": \"awake\", \"value\": 12.0, \"baseline\": 42.0, \"scale\": 3.0, \"z\": -10.0, \"pct\": -71.0, \"persistence_h\": 2, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-28T02:45\", \"ongoing\": false, \"co\": []}",
+    "decision": "{\"source\": \"jev\", \"action\": \"data_issue\", \"send\": false, \"p_alert\": 0.2, \"confidence\": 0.9, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "data_issue",
+    "text": null,
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-20m",
+    "event_id": null
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 104,
+    "status": "held_quiet"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 106,
+    "status": "held_paused"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 108,
+    "status": "held_open_story"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 109,
+    "status": "held_rate"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 110,
+    "status": "held_consent"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 111,
+    "status": "send_failed"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 112,
+    "status": "digested"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 113,
+    "status": "cancelled"
+   }
+  },
+  {
+   "k": "alert_status",
+   "d": {
+    "id": 114,
+    "status": "expired"
+   }
+  }
+ ]
+}

@@ -25,6 +25,13 @@ export const ICONS = {
   chip: "M8 8h8v8H8zM4 10h2M4 14h2M18 10h2M18 14h2M10 4v2M14 4v2M10 18v2M14 18v2",
   shield: "M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z",
   pulse: "M3 12h4l2.5-6 4 12 2.5-6H21",
+  phone: "M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM11 18h2",
+  copy: "M9 9h10v11H9zM5 15V4h10",
+  image: "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9.5v.1",
+  record: "M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6",
+  clock: "M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 7v5l3 2",
+  list: "M9 6h11M9 12h11M9 18h11M4.5 6h.1M4.5 12h.1M4.5 18h.1",
+  ear: "M7 10a5 5 0 0 1 10 0c0 2.5-2 3.2-2.6 4.8-.6 1.5-1.4 3.2-3.4 3.2a2.6 2.6 0 0 1-2.6-2.4",
 };
 
 export function icon(name, size = 20, extra = "") {
@@ -69,6 +76,7 @@ export const ALERT_LABELS = {
   rhr_sleep: "Resting heart rate in sleep", hrv_sleep: "Overnight HRV", data_quality: "Tracker data",
 };
 
+// Fallback for preview mode and for older payloads that carry no `personas` list. The live list comes from the service.
 export const PERSONAS = {
   maya: { name: "Maya", tag: "Runner", blurb: "Recreational runner with a regular schedule. Her story: an illness-like pattern, a low-oxygen night and a tracker dropout.", hue: "#FF385C" },
   daniel: { name: "Daniel", tag: "Desk job", blurb: "Late, irregular schedule. His story: three short nights, then a stressful afternoon.", hue: "#7C5CFA" },
@@ -120,3 +128,18 @@ export function robustSpread(xs, med, floor) {
   const dev = xs.map((x) => Math.abs(x - med));
   return Math.max(1.4826 * median(dev), floor);
 }
+
+// ---------------------------------------------------- real (ISO UTC) time
+// Story times (opened_at, closes_at, message and version times) are real clock times; the chart uses simulated time above.
+export const parseIso = (iso) => { const t = Date.parse(iso || ""); return Number.isNaN(t) ? null : t; };
+export function localClock(iso) {
+  const t = parseIso(iso);
+  return t == null ? "" : new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+export function localStamp(iso) {
+  const t = parseIso(iso);
+  return t == null ? "" : new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+export const humanize = (s) => { const t = String(s ?? "").replace(/[_-]+/g, " ").trim(); return t ? t[0].toUpperCase() + t.slice(1) : ""; };
+export const safeHue = (h) => (/^#[0-9a-fA-F]{6}$/.test(h || "") ? h : "#6A6A6A");

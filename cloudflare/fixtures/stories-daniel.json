@@ -1,0 +1,50 @@
+{
+ "_note": "A drafted (not sent) alert for Daniel, to check switching between people.",
+ "items": [
+  {
+   "k": "alert",
+   "d": {
+    "id": 201,
+    "persona": "daniel",
+    "kind": "hourly",
+    "metric": "hrv_rmssd",
+    "family": "heart",
+    "ts": "2026-10-19T09:45",
+    "started": "2026-10-19T07:45",
+    "evidence": "{\"persona\": \"daniel\", \"kind\": \"hourly\", \"metric\": \"hrv_rmssd\", \"ts\": \"2026-10-19T09:45\", \"state\": \"awake\", \"value\": 28.0, \"baseline\": 40.0, \"scale\": 3.0, \"z\": -4.0, \"pct\": -30.0, \"persistence_h\": 3, \"n_hist\": 76, \"quality\": \"good\", \"started\": \"2026-10-19T07:45\", \"ongoing\": false, \"co\": []}",
+    "decision": "{\"source\": \"jev\", \"action\": \"alert_now\", \"send\": true, \"p_alert\": 0.8, \"confidence\": 0.7, \"model\": \"typesafe/jev-1.14\", \"floor\": false}",
+    "status": "dry_run",
+    "text": "Signal2Care (demo data): Your HRV has been low, 28 ms against your usual 40.",
+    "sent_at": null,
+    "closed_at": null,
+    "created_at": "@NOW-1h",
+    "event_id": null
+   }
+  },
+  {
+   "k": "thread",
+   "d": {
+    "alert_id": 201,
+    "mid": "alert-201",
+    "direction": "out",
+    "text": "Signal2Care (demo data): Your HRV has been low, 28 ms against your usual 40.",
+    "kind": "alert",
+    "created_at": "@NOW-1h",
+    "options": null
+   }
+  },
+  {
+   "k": "state",
+   "d": {
+    "persona": "daniel",
+    "status": "idle",
+    "cursor": 0,
+    "total": 2688,
+    "ts": null,
+    "day": 0,
+    "speed": 4,
+    "sim_state": null
+   }
+  }
+ ]
+}

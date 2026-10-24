@@ -87,7 +87,7 @@ export function bars({ values, color, w = 280, h = 64 }) {
 
 // ------------------------------------------------------------- detail chart
 // cfg: { lines:[{key,label,color,get(i)->number|null}], i0, i1, band(i)->{lo,hi}|null, state(i)->string,
-//        pins:[{id,i0,i1,label,annotated}], unit, dec, extraTip(i)->html }
+//        pins:[{id,i0,i1,label,annotated}] (label = accessible name and tooltip, may include the story summary), unit, dec, extraTip(i)->html }
 export function detailChart(el, cfg) {
   const W = Math.max(320, el.clientWidth || 640);
   const H = 320;
@@ -151,7 +151,7 @@ export function detailChart(el, cfg) {
   const pins = (cfg.pins || []).filter((p) => p.i1 >= i0 && p.i0 <= i1).map((p) => {
     const a = X(Math.max(p.i0, i0)), b = X(Math.min(p.i1, i1));
     const col = p.annotated ? "#222222" : "#FF385C";
-    return `<g class="pin" data-alert="${p.id}" tabindex="0" role="button" aria-label="${esc(p.label)}">
+    return `<g class="pin" data-alert="${p.id}" tabindex="0" role="button" aria-label="${esc(p.label)}"><title>${esc(p.label)}</title>
       <rect x="${a.toFixed(1)}" y="${m.t}" width="${Math.max(2, b - a).toFixed(1)}" height="${ih}" fill="#FF385C" opacity=".09"/>
       <line x1="${b.toFixed(1)}" x2="${b.toFixed(1)}" y1="${m.t + 12}" y2="${m.t + ih}" stroke="${col}" stroke-dasharray="3 3" opacity=".7"/>
       <circle cx="${b.toFixed(1)}" cy="${m.t + 8}" r="10" fill="${col}"/>
@@ -161,9 +161,10 @@ export function detailChart(el, cfg) {
 
   el.innerHTML = `<svg class="dchart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.aria || "Detail chart")}">
     <defs><linearGradient id="dg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${cfg.lines[0].color}" stop-opacity=".18"/><stop offset="1" stop-color="${cfg.lines[0].color}" stop-opacity="0"/></linearGradient></defs>
-    ${shade}${grid}${xt}${bandSvg}${paths}${pins}
+    ${shade}${grid}${xt}${bandSvg}${paths}
     <g class="hover" style="display:none"><line class="hl" y1="${m.t}" y2="${m.t + ih}" stroke="#222" stroke-opacity=".35"/>${cfg.lines.map((l) => `<circle class="hd" r="4.5" fill="#fff" stroke="${l.color}" stroke-width="2.2"/>`).join("")}</g>
     <rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/>
+    ${pins}
   </svg><div class="tip" role="status" hidden></div>`;
 
   const svg = el.querySelector("svg");

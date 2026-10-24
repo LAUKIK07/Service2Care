@@ -14,6 +14,7 @@ from . import research, stats
 from .alerts import FAMILY, LABEL, UNIT, AlertEngine
 from .replay import Replay
 from .sim.personas import METRICS
+from .guard import EVIDENCE_RULES
 
 log = logging.getLogger("s2c.tools")
 
@@ -36,13 +37,16 @@ SPECS = [
                        "sleep) is consistent with the size of the change in an alert. It never proves a cause.",
         "parameters": {"type": "object", "properties": {
             "factor": {"type": "string", "enum": ["workout", "poor_sleep"]},
-            "alert_id": {"type": "integer", "description": "Optional. Defaults to the alert being discussed, else the latest."}},
+            "alert_id": {"type": "string", "description": "Optional alert id or event id (evt-...). Defaults to the alert being discussed."}},
             "required": ["factor"]}}},
     {"type": "function", "function": {
-        "name": "search_literature",
-        "description": "Search PubMed for published studies on a general topic (for example 'HRV and alcohol'). Returns titles, "
-                       "years, links and short abstract excerpts. Use it for general background only, never to explain this person's data.",
-        "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
+        "name": "find_evidence",
+        "description": "Search PubMed (the only allowed source) for published studies about a general question, such as 'wearable skin temperature "
+                       "fever detection'. Use plain medical terms, 3 to 6 words. Returns study type, year, PubMed id and the abstract sentences "
+                       "with numbers. Use it when the person asks what research says, or when you want to explain what a change in a metric is "
+                       "known to be associated with. It is background only: never say it explains this person's own reading.",
+        "parameters": {"type": "object", "properties": {"query": {"type": "string", "description": "3 to 6 plain medical terms"}},
+                       "required": ["query"]}}},
 ]
 
 
@@ -51,16 +55,46 @@ class ToolBox:
         self.replay = replay
         self.alerts = alerts
         self.http = http
+        self.trace: dict[str, list[tuple[str, dict]]] = {}      # tool results per person for the current turn, for fact-checking
+
+    def begin_turn(self, handle: str) -> None:
+        self.trace[handle] = []
+
+    def results_text(self, handle: str) -> str:
+        return json.dumps([r for _, r in self.trace.get(handle, [])], default=str)
+
+    def evidence_summary(self, handle: str) -> str | None:
+        """Plain summary of the studies found this turn, built from the search results only (used when wording could not be checked)."""
+        for name, res in reversed(self.trace.get(handle, [])):
+            if name == "find_evidence" and res.get("papers"):
+                lines = ["Here is what published studies report. This is general background, and it does not explain your own readings:", ""]
+                for p in res["papers"][:3]:
+                    sent = (p.get("key_sentences") or [""])[0]
+                    lines.append(f"\u2022 {p['study_type'].split(' (')[0].capitalize()}, {p['year']} (PMID {p['pmid']}): {sent}"[:330])
+                return "\n".join(lines)
+        return None
+
+    def used(self, handle: str, name: str) -> bool:
+        return any(n == name for n, _ in self.trace.get(handle, []))
+
+    def has_wearable(self, handle: str) -> bool:
+        persona = self.alerts.persona_for(handle)
+        return bool(persona and self.replay.state(persona)["cursor"] > 0)
 
     def specs_for(self, handle: str) -> list[dict] | None:
         persona = self.alerts.persona_for(handle)
         if not persona or self.replay.state(persona)["cursor"] == 0:
-            return None
+            return [SPECS[-1]]                           # evidence lookup works without a wearable
         return SPECS
 
     async def run(self, handle: str, name: str, args: dict) -> dict:
+        result = await self._run(handle, name, args)
+        self.trace.setdefault(handle, []).append((name, result))
+        return result
+
+    async def _run(self, handle: str, name: str, args: dict) -> dict:
         persona = self.alerts.persona_for(handle)
-        if not persona:
+        if not persona and name != "find_evidence":
             return {"error": "no wearable is linked to this person"}
         if name == "get_metric_summary":
             return self._summary(persona, str(args.get("metric", "")), int(args.get("hours") or 6))
@@ -68,12 +102,15 @@ class ToolBox:
             return self._list(persona, int(args.get("limit") or 5))
         if name == "check_claim":
             return self._check(persona, handle, str(args.get("factor", "")), args.get("alert_id"))
-        if name == "search_literature":
+        if name == "find_evidence":
             try:
                 papers = await research.search_pubmed(self.http, str(args.get("query", "")))
-            except httpx.HTTPError as exc:
-                return {"error": f"PubMed unreachable ({type(exc).__name__})"}
-            return {"source": "PubMed", "note": "General literature only. Not about this person.", "papers": papers}
+            except (httpx.HTTPError, ValueError) as exc:
+                return {"error": f"PubMed unreachable ({type(exc).__name__}). Tell the person you could not look it up and do not guess."}
+            if not papers:
+                return {"source": "PubMed", "papers": [], "rules": EVIDENCE_RULES,
+                        "note": "No closely matching studies were found. Say so plainly. Do not guess or fill the gap from memory."}
+            return {"source": "PubMed", "rules": EVIDENCE_RULES, "papers": [{k: p[k] for k in ("pmid", "title", "year", "journal", "study_type", "url", "key_sentences")} for p in papers]}
         return {"error": f"unknown tool {name}"}
 
     # ----------------------------------------------------------------- readers
@@ -123,7 +160,9 @@ class ToolBox:
         if factor not in ("workout", "poor_sleep"):
             return {"error": "factor must be workout or poor_sleep"}
         with self.alerts.db.conn() as c:
-            if alert_id:
+            if alert_id and str(alert_id).startswith("evt-"):
+                row = c.execute("SELECT * FROM alerts WHERE event_id=? AND persona=?", (str(alert_id), persona)).fetchone()
+            elif alert_id and str(alert_id).strip().isdigit():
                 row = c.execute("SELECT * FROM alerts WHERE id=? AND persona=?", (int(alert_id), persona)).fetchone()
             else:
                 open_ = self.alerts.open_for(handle)

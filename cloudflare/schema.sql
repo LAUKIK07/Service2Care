@@ -1,5 +1,11 @@
--- Signal2Care dashboard store (Cloudflare D1). Synthetic wearable data plus the alert threads shown on the dashboard.
--- Phone numbers are never stored here.
+-- Signal2Care dashboard store (Cloudflare D1), schema version 2.
+-- Wearable series (synthetic or from public datasets), the alerts ("events") with the conversation ("story") attached to each,
+-- and the person's own health notes. Phone numbers are never stored here.
+--
+-- Fresh install:   npx wrangler d1 execute signal2care --local  --file=schema.sql        (or --remote)
+-- Existing v1 DB:  apply migrations/0002_story.sql instead (this file would not add the new columns to existing tables).
+-- Columns added in version 2 are listed last in each table, in the same order as migrations/0002_story.sql,
+-- so a migrated database and a fresh one have identical tables.
 
 CREATE TABLE IF NOT EXISTS series(
   persona TEXT NOT NULL,
@@ -35,6 +41,10 @@ CREATE TABLE IF NOT EXISTS feed(
 );
 CREATE INDEX IF NOT EXISTS idx_feed_persona ON feed(persona, id);
 
+-- One row per alert = one "event". event_id is the human-readable id printed on the picture card, e.g. evt-maya-202610201000-skin_temp.
+-- evidence (JSON) holds the numbers and, from version 2, the receipt; status is one of: sent, discussed, resolved, dry_run, suppressed,
+-- watching, ignored, data_issue, send_failed, sending, held_consent, held_paused, held_quiet, held_open_story, held_rate,
+-- digested, cancelled, expired.
 CREATE TABLE IF NOT EXISTS alerts(
   id INTEGER PRIMARY KEY,
   persona TEXT NOT NULL,
@@ -49,10 +59,14 @@ CREATE TABLE IF NOT EXISTS alerts(
   text TEXT,
   sent_at TEXT,
   closed_at TEXT,
-  created_at TEXT
+  created_at TEXT,
+  event_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_alerts_persona ON alerts(persona, id);
 
+-- The story of one alert: what the person said in the conversation window, the checks run against their own history,
+-- and the interpretation as versions (v1 from the data, v2 after they shared context). status is open|closed;
+-- while open, closes_at (ISO UTC) is when the window closes. factors/computed/qa/versions are JSON text.
 CREATE TABLE IF NOT EXISTS annotations(
   alert_id INTEGER PRIMARY KEY,
   persona TEXT NOT NULL,
@@ -63,18 +77,39 @@ CREATE TABLE IF NOT EXISTS annotations(
   factors TEXT,
   computed TEXT,
   created_at TEXT,
-  updated_at TEXT
+  updated_at TEXT,
+  event_id TEXT,
+  status TEXT,
+  opened_at TEXT,
+  closes_at TEXT,
+  qa TEXT,
+  versions TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_annotations_persona ON annotations(persona, alert_id);
 
+-- Messages of an alert's conversation. kind: alert|question|poll|reply|update|closing|explain|system|reply_in;
+-- options is a JSON array of strings, only for kind poll. delivery (outgoing messages): sent|delivered|read|failed, only moves forward.
 CREATE TABLE IF NOT EXISTS thread(
   alert_id INTEGER NOT NULL,
   mid TEXT NOT NULL,
   direction TEXT,
   text TEXT,
   created_at TEXT,
+  kind TEXT,
+  options TEXT,
+  delivery TEXT,
   PRIMARY KEY(alert_id, mid)
 ) WITHOUT ROWID;
 
+-- The person's own health notes: a snapshot that replaces the previous one. items and flags are JSON text.
+CREATE TABLE IF NOT EXISTS profile(
+  persona TEXT PRIMARY KEY,
+  items TEXT NOT NULL,
+  flags TEXT,
+  updated_at INTEGER NOT NULL
+);
+
+-- Small singletons: rev, epoch, send_alerts, health, personas (the people the dashboard can show, plus which one a phone is linked to).
 CREATE TABLE IF NOT EXISTS kv(
   key TEXT PRIMARY KEY,
   value TEXT,

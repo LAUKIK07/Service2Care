@@ -4,25 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Signal2Care · watch the signal, not the noise</title>
-  <meta name="description" content="See how Signal2Care watches wearable data, decides what is worth a text, and links your reply back to the chart. Synthetic data only.">
+  <meta name="description" content="See how Signal2Care watches wearable data, decides what is worth a text, and links your reply back to the chart. Synthetic or public data only.">
   <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://laukik07.github.io/Service2Care/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- Link previews (iMessage, Slack, social): the image must be an absolute URL. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Signal2Care">
+  <meta property="og:title" content="Signal2Care · watch the signal, not the noise">
+  <meta property="og:description" content="A wearable watches, a text asks, and your reply lands back on the chart next to the numbers. Demo with synthetic or public data.">
+  <meta property="og:url" content="https://laukik07.github.io/Service2Care/">
+  <meta property="og:image" content="https://laukik07.github.io/Service2Care/og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Signal2Care: a skin temperature card with an alert pin, and a short text conversation about it.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Signal2Care · watch the signal, not the noise">
+  <meta name="twitter:description" content="A wearable watches, a text asks, and your reply lands back on the chart next to the numbers. Demo with synthetic or public data.">
+  <meta name="twitter:image" content="https://laukik07.github.io/Service2Care/og.png">
+  <meta name="twitter:image:alt" content="Signal2Care: a skin temperature card with an alert pin, and a short text conversation about it.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="top"><div class="wrap" id="top-inner"></div></header>
+  <header class="top">
+    <div class="wrap" id="top-inner"></div>
+    <div class="minibar" id="minibar" hidden><div class="wrap" id="mini-inner"></div></div>
+  </header>
   <div class="wrap"><div id="banner"></div></div>
 
   <main id="main" class="wrap">
     <section id="hero" class="card hero" aria-label="Replay controls"></section>
 
-    <section aria-labelledby="h-pipe">
-      <div class="sec-head">
-        <h2 id="h-pipe">How the signal travels</h2>
-        <p>Every 15 minutes of data flows left to right. Code does the maths, Jev judges, the language model only words the text.</p>
-      </div>
+    <section class="pipe-sec" aria-label="How the signal travels: wearable, monitor, Jev, language model, iMessage">
       <div id="pipe" class="pipe card"></div>
     </section>
 
@@ -35,15 +51,26 @@
     </section>
 
     <div class="cols">
-      <section id="alerts-sec" aria-labelledby="h-alerts">
-        <div class="sec-head">
-          <h2 id="h-alerts">Alerts, and what you said about them <span id="alert-count" class="count"></span></h2>
-          <p>When you reply to a text, your words are attached to the moment on the chart and checked against your own history.</p>
-        </div>
-        <div id="alerts" aria-live="polite"></div>
-      </section>
+      <div class="col-main">
+        <section id="timeline-sec" aria-labelledby="h-story">
+          <div class="sec-head">
+            <h2 id="h-story">Story timeline <span id="story-count" class="count"></span> <span id="story-open" class="open-note"></span></h2>
+            <p>Each text starts a conversation. Newest first. Select one to jump to its alert.</p>
+          </div>
+          <div id="timeline"></div>
+        </section>
 
-      <aside aria-label="Messages and model activity">
+        <section id="alerts-sec" aria-labelledby="h-alerts">
+          <div class="sec-head">
+            <h2 id="h-alerts">Alerts, and what you said about them <span id="alert-count" class="count"></span></h2>
+            <p>When you reply to a text, your words are attached to the moment on the chart and checked against your own history.</p>
+          </div>
+          <div id="alerts"></div>
+        </section>
+      </div>
+
+      <aside aria-label="Health record, messages and model activity">
+        <section id="record" class="card rec" aria-label="Health record" hidden></section>
         <section>
           <div class="sec-head"><h2>iMessage</h2></div>
           <div id="phone"></div>

@@ -24,6 +24,7 @@ from pathlib import Path
 from .config import Settings
 from .db import Database
 from .llm import LLMClient, LLMError, extract_json
+from .memctl import ControlMixin
 from .prompts import CONSOLIDATE_PROMPT
 from .textutil import fmt_ts, now_iso
 
@@ -75,7 +76,7 @@ def _rrf(*ranked: list[int], k: int = 60) -> list[int]:
     return sorted(score, key=score.get, reverse=True)  # type: ignore[arg-type]
 
 
-class Memory:
+class Memory(ControlMixin):
     def __init__(self, db: Database, llm: LLMClient, settings: Settings):
         self.db = db
         self.llm = llm
@@ -127,7 +128,7 @@ class Memory:
         with self.db.conn() as c:
             return c.execute(
                 "SELECT rowid, id, chat_id, text, created_at FROM messages "
-                "WHERE handle=? AND direction='in' AND rowid > "
+                "WHERE handle=? AND direction='in' AND kind != 'tapback' AND rowid > "
                 "COALESCE((SELECT MAX(rowid) FROM messages WHERE handle=? AND direction='out'), 0) "
                 "ORDER BY rowid",
                 (handle, handle),
@@ -246,9 +247,11 @@ class Memory:
                 "SELECT path FROM attachments WHERE handle=? AND path IS NOT NULL", (handle,))]
             for table in ("messages_fts", "events_fts"):
                 c.execute(f"DELETE FROM {table} WHERE handle=?", (handle,))
-            for table in ("attachments", "events", "facts", "summaries", "cursors", "messages"):
+            for table in ("attachments", "events", "facts", "summaries", "cursors", "messages", "pending_polls", "pending_confirms", "outbox"):
                 c.execute(f"DELETE FROM {table} WHERE handle=?", (handle,))
-            c.execute("UPDATE users SET pending_forget=0 WHERE handle=?", (handle,))
+            # a clean slate: the person is asked again for consent and their health notes
+            c.execute("UPDATE users SET pending_forget=0, consent=0, consent_at=NULL, onboarding='new', ob_step=0, "
+                      "paused_until=NULL, last_ref=NULL WHERE handle=?", (handle,))
         for p in paths:
             try:
                 Path(p).unlink(missing_ok=True)

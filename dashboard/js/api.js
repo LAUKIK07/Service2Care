@@ -4,6 +4,10 @@
 const KEY = "s2c.conn";
 
 export class AuthError extends Error {}
+// Any other non-2xx answer. `body` is the parsed JSON of the answer when there was one (the service explains a 400 this way).
+export class HttpError extends Error {
+  constructor(status, body) { super(`HTTP ${status}`); this.status = status; this.body = body; }
+}
 
 function safeApi(url) {
   try {
@@ -44,6 +48,6 @@ export async function call(conn, path, { method = "GET", body } = {}) {
     cache: "no-store",
   });
   if (res.status === 401) throw new AuthError("unauthorized");
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new HttpError(res.status, await res.json().catch(() => null));
   return res.json();
 }
