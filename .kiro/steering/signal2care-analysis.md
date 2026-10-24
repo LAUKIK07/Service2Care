@@ -387,3 +387,10 @@ Orchestration: Sonnet 5.5 (session model). The task was Haiku-eligible; not swit
 - Blocked: Mistral chat, vision and OCR return 403 or a 0 per-minute limit for this key (see 5b). Until fixed, the service stores messages, runs the deterministic commands, and tells the person the model is unreachable.
 - Open: first live inbound message not yet seen, so the real `--forward-to` payload shape is unverified. The Linq send body is accepted by the API: a send before the person has texted returned the expected 403 code 2008 (inbound-first), not a format error.
 - Orchestration: Sonnet 5.5. Memory design and prompts are Opus-tier work and should get a review pass.
+
+### 2026-10-24, session 1 follow-up: first commit, push and merge
+- Committed the chat agent as `c9d4ba1` on `feat/imessage-memory-agent` after a secret scan (clean). The first push attempts failed because the SSH key needs a passphrase and no agent held it. The user pushed the branch from their terminal.
+- On the user's request, fast-forwarded `main` from `3341f68` to `c9d4ba1` and pushed, using a throwaway ssh-agent so nothing persisted. The remote now has `main` and the feature branch at the same commit.
+- The repo is public. The commit shows the user's git identity only. The user wants Kiro credited too, so later commits carry a `Co-authored-by: Kiro` trailer (see `orchestration.md`, section Git). `c9d4ba1` was not rewritten. Adding the trailer to it would need a force push to public `main`, which needs an explicit OK.
+- The passphrase was shared in chat. It is weak, and the user was advised to change it. It is not stored anywhere in the repo.
+- Orchestration: Sonnet 5.5. Haiku-eligible, not switched.

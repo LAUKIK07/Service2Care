@@ -40,3 +40,9 @@ Rules
 - On safety-path code, the reviewer is never a lower tier than the author.
 - Opus 5.5 and Haiku 5.5 are experimental in Kiro (Haiku launched 2026-10-23). Verify their output with tests.
 - This file loads on every request. Keep it short and put long material in manual steering files.
+
+## Git
+- Every commit I make ends with the trailer `Co-authored-by: Kiro <noreply@kiro.invalid>` so GitHub credits the user and Kiro. The address is a placeholder: GitHub links a co-author to a profile only if the email belongs to a GitHub account. Do not rewrite pushed history to add it without asking.
+- Push to a new branch. Fast-forward `main` only when the user asks.
+- Pushing needs the SSH key `~/universal`. Only the user supplies its passphrase. Never write it to a repo file or a steering file. Load the key into a throwaway ssh-agent for one command (SSH_ASKPASS with a temp script, then delete it and kill the agent). Set `GIT_SSH_COMMAND="ssh -o BatchMode=yes"` so a missing key fails fast instead of hanging.
+- Leave git config unchanged. The commit author is the user's configured identity.
