@@ -85,6 +85,70 @@ CREATE TABLE IF NOT EXISTS cursors(
   consolidated_rowid INTEGER NOT NULL DEFAULT 0
 );
 
+-- Wearable stream (synthetic). One row per 15-minute tick; v is JSON of every channel.
+CREATE TABLE IF NOT EXISTS series(
+  persona TEXT NOT NULL,
+  i INTEGER NOT NULL,
+  ts TEXT NOT NULL,
+  state TEXT NOT NULL,
+  quality TEXT NOT NULL,
+  v TEXT NOT NULL,
+  PRIMARY KEY(persona, i)
+);
+CREATE TABLE IF NOT EXISTS replay(
+  persona TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'idle',
+  cursor INTEGER NOT NULL DEFAULT 0,
+  speed REAL NOT NULL DEFAULT 2,
+  updated_at TEXT
+);
+-- Alerts the monitor raised and what was decided about them.
+CREATE TABLE IF NOT EXISTS alerts(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  persona TEXT NOT NULL,
+  kind TEXT,
+  metric TEXT,
+  family TEXT,
+  ts TEXT,
+  started TEXT,
+  evidence TEXT,
+  decision TEXT,
+  status TEXT NOT NULL,
+  text TEXT,
+  message_id TEXT,
+  handle TEXT,
+  sent_at TEXT,
+  created_at TEXT NOT NULL,
+  closed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_alerts_persona ON alerts(persona, id);
+-- What the person said about an alert plus the arithmetic that checks it.
+CREATE TABLE IF NOT EXISTS annotations(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  alert_id INTEGER UNIQUE,
+  persona TEXT,
+  metric TEXT,
+  start_ts TEXT,
+  end_ts TEXT,
+  summary TEXT,
+  factors TEXT,
+  computed TEXT,
+  created_at TEXT,
+  updated_at TEXT
+);
+-- Activity log of what the monitor, Jev and the language model did.
+CREATE TABLE IF NOT EXISTS feed(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  persona TEXT,
+  ts TEXT,
+  actor TEXT,
+  kind TEXT,
+  text TEXT,
+  data TEXT,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
   text, msg_id UNINDEXED, handle UNINDEXED, tokenize='porter unicode61'
 );

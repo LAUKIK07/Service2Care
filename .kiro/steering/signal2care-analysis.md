@@ -241,7 +241,7 @@ Claims I do not make
 
 ---
 
-## 6. Recommended path
+## 6. Recommended path (superseded by `architecture.md`)
 
 Order logic: Linq, Mistral and Jev are the only unknowns that can change the architecture. The deterministic core has none. Spike the unknowns early, keep them off the critical path.
 
@@ -394,3 +394,28 @@ Orchestration: Sonnet 5.5 (session model). The task was Haiku-eligible; not swit
 - The repo is public. The commit shows the user's git identity only. The user wants Kiro credited too, so later commits carry a `Co-authored-by: Kiro` trailer (see `orchestration.md`, section Git). `c9d4ba1` was not rewritten. Adding the trailer to it would need a force push to public `main`, which needs an explicit OK.
 - The passphrase was shared in chat. It is weak, and the user was advised to change it. It is not stored anywhere in the repo.
 - Orchestration: Sonnet 5.5. Haiku-eligible, not switched.
+
+### 2026-10-24, session 1 follow-up: DeepInfra switch, attachment router, normalized plan
+- The user moved the LLM to DeepInfra (DeepSeek V4 Flash 0731) and asked for a normalized plan (GitHub Pages dashboard, Cloudflare backend, always-on monitor, Jev decisions, WHOOP-style replay) before building it. The plan is in `architecture.md`. Only the chat path was built now.
+- Correction to a user claim [VERIFIED by calls]: `DeepSeek-V4-Flash-0731` is text only on DeepInfra. Image turns use `DeepSeek-V4.1-Flash-1017`, which accepts images. DeepInfra has no OCR model and no Jev.
+- Built: `llm.py` (OpenAI-compatible client with model fallback, network retries, lenient JSON parsing), `ocr.py` (document reader: PDF text layer first, optional OCR provider, one normalization step), model router in `agent.py` (images go to the vision model as they are, documents become normalized text, each image also gets a stored text note so it is searchable later). Embeddings moved to `BAAI/bge-m3` on DeepInfra. `mistral.py` removed.
+- Tested against the live DeepInfra API with a fake iMessage line, nothing sent to a phone: natural text replies, fact and event extraction, recall of earlier details, image turn on the vision model ("solid red" on a 192 px test image), stored image note, PDF text-layer read and recall. Offline regression (12 checks) passed after a fix to a race that delayed image notes and one that let network errors escape. Test scripts were deleted.
+- A 16 px test image was read as white. That is a too-small-image artifact, not a routing bug.
+- Not built: Cloudflare, dashboard, simulator, monitor, Jev, web research, emergency contact.
+- Still open: the OCR provider and key, a Jev key, Cloudflare access, and the first real inbound text (live payload shape still unseen).
+- The DeepInfra key was pasted in chat, so it is in this transcript. Rotate it after the demo. `OCR_API_KEY` is empty.
+- Orchestration: Sonnet 5.5. Architecture and the alert pipeline are Opus-tier decisions and need a review pass.
+
+### 2026-10-24, session 1 follow-up: OCR.space router and Jev access
+- Added OCR.space (free key) as the OCR provider. Router in `ocr.py`: plain text files are read directly, PDFs use the text layer first, scanned PDFs are rendered page by page (poppler) and read through OCR.space (Engine 2, then Engine 3 if almost nothing is found), photos go to the vision model and also to OCR when the person asks for the text. One normalization step (control characters, whitespace, length, Cyrillic look-alikes inside Latin words). Free-plan limits are handled: images are shrunk under 1 MB, at most 6 scanned pages per PDF.
+- Bug found by the end-to-end test and fixed: a follow-up question about an earlier document made the model invent prices, because document text lived only in the database and the recent-message window showed just the "[attachment]" marker. Extracted text now rides along with its message in the prompt (newest first, 24,000 characters), recalled older messages show up to 1,500 characters of attachment text, and the prompt says to answer only from that text or admit the detail is missing. After the fix the same follow-up answered correctly ($14.50 sandwich, $4.50 per latte).
+- Also fixed: OCR.space's "no text detected" placeholder was beating an empty result, and the file type was hard-coded as JPEG. The type is now read from the bytes. The first blank test image was a poppler font problem in my test file, not an OCR failure.
+- Jev: OpenRouter key works. `jev.py` has typed builders for Noul, Choice and Score. Smoke-test results are in `architecture.md` section 3. Not wired into the chat path.
+- The OCR.space key and the OpenRouter key were pasted in chat, so both are in this transcript. Rotate after the demo. The OpenRouter key was described as Jev-only.
+- Test scripts and test files were deleted. Nothing is committed (working tree is on branch `docs/coauthor-and-log`).
+- Orchestration: Sonnet 5.5.
+
+### 2026-10-24, session 1 follow-up: first live iMessage round trip [VERIFIED on Linq and in the local database]
+- At 2:24 PM the user texted "Hi". The Linq CLI relay forwarded it, the receiver parsed and stored it (sender, text, time correct), and two messages went out and were delivered: the first-contact disclosure and the "model isn't reachable" notice. That was the older server, when the Mistral key was blocked, so no model reply happened.
+- This closes two open items: the live inbound payload parses correctly for text, and the Linq send path works end to end.
+- Still unseen live: a DeepSeek reply, a photo, a PDF. The "Hi" has no reply recorded, so it will be part of the next pending batch. The sweeper skips messages older than 30 minutes by design.

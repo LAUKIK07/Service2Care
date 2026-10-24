@@ -1,8 +1,8 @@
-"""One conversation turn: consent, safety, commands, media, memory, model, reply."""
+"""One conversation turn: consent, safety, commands, attachments, memory, model, reply."""
 from __future__ import annotations
 
 import asyncio
-import base64
+import functools
 import hashlib
 import logging
 import os
@@ -12,12 +12,15 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import Settings, mask
+from .guard import FALLBACK as GUARD_FALLBACK, REWRITE_NOTE, violations
 from .linq import Inbound, LinqClient, LinqError
+from .llm import LLMClient, LLMError, LLMUnavailable
 from .media import ext_for, to_data_url
 from .memory import Memory
-from .mistral import LLMUnavailable, MistralClient, MistralError
+from .ocr import DocumentReader
 from .prompts import (
-    DISCLOSURE, FORGET_CONFIRM_TEXT, FORGET_DONE_TEXT, HELP_TEXT, SYSTEM_PROMPT, UNAVAILABLE_TEXT, WELCOME,
+    DESCRIBE_PROMPT, DISCLOSURE, FORGET_CONFIRM_TEXT, FORGET_DONE_TEXT, HELP_TEXT, SYSTEM_PROMPT,
+    UNAVAILABLE_TEXT, WEARABLE_OFF, WEARABLE_ON, WELCOME,
 )
 from .safety import classify
 from .textutil import clean_reply, fmt_ts, normalize_word, now_iso, parse_ts, split_reply
@@ -31,24 +34,37 @@ RECALL_CMD = re.compile(
     r"what (do|did) you (remember|know) about me|what do you remember|show (me )?(my )?(memory|notes)", re.I)
 FORGET_CMD = re.compile(r"forget (everything|all|it all)")
 FORGET_CONFIRM = re.compile(r"confirm forget( everything)?")
+# Typed controls for the simulated wearable replay (deterministic, no model involved).
+DEMO_CMD = re.compile(r"demo (play|start|resume|pause|stop|status|reset|day \d{1,2}|speed \d{1,2}(\.\d)?|alerts (on|off))")
 IMAGE_HINT = re.compile(r"\b(photo|picture|image|screenshot|pic|selfie|receipt|scan|that one)\b", re.I)
+# When someone wants the text out of an image, OCR runs as well and the model gets both views.
+TEXT_HINT = re.compile(r"\b(read|scan|extract|transcribe|ocr|text|says?|written|handwrit\w*|copy|total|invoice|receipt)\b", re.I)
 
 WINDOW_CHARS = 40_000
+ATTACHMENT_HISTORY_CHARS = 24_000
 MAX_IMAGES = 4
 
 
 class Agent:
-    def __init__(self, settings: Settings, memory: Memory, mistral: MistralClient, linq: LinqClient):
+    def __init__(self, settings: Settings, memory: Memory, llm: LLMClient, linq: LinqClient,
+                 docs: DocumentReader):
         self.s = settings
         self.memory = memory
-        self.mistral = mistral
+        self.llm = llm
         self.linq = linq
+        self.docs = docs
         self._timers: dict[str, asyncio.Task] = {}
         self._active: set[str] = set()
         self._consolidating: set[str] = set()
+        self._to_describe: dict[str, list] = {}
         self._notice_at: dict[str, float] = {}
         self._sweep_tries: dict[str, int] = {}
         self._tasks: set[asyncio.Task] = set()
+        # Wired by the app after construction (they need the agent to exist first).
+        self.alerts = None          # AlertEngine
+        self.tools = None           # ToolBox
+        self.replay = None          # Replay
+        self.demo = None            # async (handle, word) -> reply text, or None
 
     # ------------------------------------------------------------------ inbound
     async def on_inbound(self, ev: Inbound) -> None:
@@ -109,6 +125,11 @@ class Agent:
         if RECALL_CMD.search(ev.text):
             await self._say(h, self.memory.export_for_user(h), record=True)
             return
+        if self.demo and DEMO_CMD.fullmatch(word):
+            reply = await self.demo(h, word)
+            if reply:
+                await self._say(h, reply, record=True)
+                return
 
         if is_new:
             await self._say(h, DISCLOSURE, record=False)
@@ -188,41 +209,69 @@ class Agent:
                 log.exception("sweeper")
 
     # ------------------------------------------------------------------- output
-    async def _say(self, handle: str, text: str, *, record: bool) -> bool:
+    async def _say(self, handle: str, text: str, *, record: bool) -> str | None:
+        """Send one iMessage. Returns the message id when it went out, else None."""
         try:
             resp = await self.linq.send_text(handle, text)
         except LinqError as exc:
             log.error("send failed: %s", exc)
-            return False
+            return None
         except Exception:
             log.exception("send failed")
-            return False
+            return None
+        msg = resp.get("message") or {}
+        msg_id = str(msg.get("id") or f"out-{time.time_ns()}")
         if record:
-            msg = resp.get("message") or {}
             self.memory.record_message(
-                msg_id=str(msg.get("id") or f"out-{time.time_ns()}"), event_id=None,
-                chat_id=str(resp.get("chat_id") or ""), handle=handle, direction="out", text=text,
-                created_at=now_iso(),
+                msg_id=msg_id, event_id=None, chat_id=str(resp.get("chat_id") or ""), handle=handle,
+                direction="out", text=text, created_at=now_iso(),
             )
-        return True
+        return msg_id
+
+    async def send_proactive(self, handle: str, text: str) -> str | None:
+        """A message the system starts (an alert). Only to allow-listed people who have texted us and not opted out."""
+        if handle not in self.s.allowed_numbers or self.memory.is_opted_out(handle):
+            return None
+        with self.memory.db.conn() as c:
+            known = c.execute("SELECT 1 FROM users WHERE handle=?", (handle,)).fetchone()
+        if not known:
+            return None          # this person has never written to the line, so there is no consent to message them
+        return await self._say(handle, text, record=True)
 
     # --------------------------------------------------------------------- turn
     async def _answer(self, handle: str, pending: list) -> bool:
         self._spawn(self.linq.typing(pending[-1]["chat_id"]))
-        images, ocr_blocks, notes = await self._prepare_attachments(handle, pending)
+        images, doc_blocks, notes, to_describe = await self._prepare_attachments(handle, pending)
 
-        query = " ".join(r["text"] for r in pending) + " " + " ".join(ocr_blocks)
+        query = " ".join(r["text"] for r in pending) + " " + " ".join(doc_blocks)
         history = self.memory.recent_transcript(handle, WINDOW_CHARS)
         window_min = history[0]["rowid"] if history else pending[0]["rowid"]
         recalled = await self.memory.retrieve(handle, query, window_min_rowid=window_min)
 
-        messages = self._build_messages(handle, history, pending, recalled, images, ocr_blocks, notes)
-        text, usage = await self.mistral.chat(messages, self.s.chat_models, max_tokens=700, temperature=0.5)
-        log.info("reply generated model=%s prompt_tokens=%s completion_tokens=%s",
-                 usage.get("model"), usage.get("prompt_tokens"), usage.get("completion_tokens"))
+        alert = self.alerts.open_for(handle) if self.alerts else None
+        tool_specs = self.tools.specs_for(handle) if self.tools else None
+        messages = self._build_messages(handle, history, pending, recalled, images, doc_blocks, notes,
+                                        alert=alert, wearable=bool(tool_specs))
+        # Router: turns with images go to the vision-capable models, everything else to the text models.
+        models = self.s.vision_models if images else self.s.text_models
+        text, usage = await self._complete(handle, messages, models, tool_specs)
+        log.info("reply generated model=%s prompt_tokens=%s completion_tokens=%s images=%d tools=%s",
+                 usage.get("model"), usage.get("prompt_tokens"), usage.get("completion_tokens"), len(images),
+                 [t["name"] for t in usage.get("tools", [])] or "-")
         reply = clean_reply(text)
         if not reply:
             return False
+        found = violations(reply)
+        if found:                                   # firm rules for health: one rewrite, then a fixed answer
+            log.warning("reply held by guard: %s", found)
+            retry = messages + [{"role": "assistant", "content": reply}, {"role": "user", "content": "[system] " + REWRITE_NOTE}]
+            try:
+                text2, _ = await self.llm.chat(retry, models, max_tokens=500, temperature=0.3)
+                reply = clean_reply(text2)
+            except LLMError:
+                reply = ""
+            if not reply or violations(reply):
+                reply = GUARD_FALLBACK
 
         sent = False
         for i, part in enumerate(split_reply(reply)):
@@ -230,15 +279,46 @@ class Agent:
                 await asyncio.sleep(0.8)
             sent = await self._say(handle, part, record=True) or sent
         if sent:
-            self._kick_consolidation(handle)
+            self._kick_consolidation(handle, to_describe)
+            if self.alerts:
+                self.alerts.after_reply(handle)     # link what they said to the chart
         return sent
 
+    async def _complete(self, handle: str, messages: list[dict], models: tuple[str, ...], tool_specs):
+        if tool_specs:
+            try:
+                return await self.llm.chat_with_tools(messages, models, tool_specs, functools.partial(self.tools.run, handle),
+                                                      max_tokens=700, temperature=0.5)
+            except LLMError as exc:
+                log.warning("tool turn failed (%s), answering without tools", exc)
+        return await self.llm.chat(messages, models, max_tokens=700, temperature=0.5)
+
     def _build_messages(self, handle: str, history: list, pending: list, recalled: dict,
-                        images: list[str], ocr_blocks: list[str], notes: list[str]) -> list[dict]:
+                        images: list[str], doc_blocks: list[str], notes: list[str], *,
+                        alert: dict | None = None, wearable: bool = False) -> list[dict]:
         now = datetime.now().astimezone().strftime("%A, %B %d, %Y, %I:%M %p %Z")
-        system = f"{SYSTEM_PROMPT}\n\nCurrent time: {now}.\n\n{self.memory.render(handle, recalled)}"
+        persona = self.alerts.persona_for(handle) if self.alerts else None
+        sim = (self.replay.state(persona)["ts"] if (wearable and persona and self.replay) else None) or "not started"
+        blocks = [SYSTEM_PROMPT, f"Current time: {now}.",
+                  WEARABLE_ON.format(sim_time=sim) if wearable else WEARABLE_OFF]
+        if alert:
+            blocks.append(self.alerts.alert_context(alert))
+        blocks.append(self.memory.render(handle, recalled))
+        system = "\n\n".join(blocks)
         msgs: list[dict] = [{"role": "system", "content": system}]
         pending_ids = {r["rowid"] for r in pending}
+        # Documents and images the person sent earlier stay readable: their extracted text rides along
+        # with the message that carried them, newest first, within a budget.
+        attached = self.memory.attachment_texts([r["id"] for r in history if r["rowid"] not in pending_ids])
+        budget = ATTACHMENT_HISTORY_CHARS
+        keep: dict[str, str] = {}
+        for r in reversed(history):
+            for fname, text in attached.get(r["id"], []):
+                piece = text[:4000]
+                if budget - len(piece) < 0:
+                    break
+                budget -= len(piece)
+                keep[r["id"]] = keep.get(r["id"], "") + f'\n<attachment_text file="{fname}">\n{piece}\n</attachment_text>'
         for r in history:
             if r["rowid"] in pending_ids:
                 continue
@@ -246,20 +326,21 @@ class Agent:
             if role == "assistant" and len(msgs) == 1:
                 continue  # the first turn after the system prompt must be the user's
             content = f"[{fmt_ts(r['created_at'])}] {r['text']}" if role == "user" else r["text"]
+            content += keep.get(r["id"], "")
             if msgs[-1]["role"] == role:
                 msgs[-1]["content"] += "\n" + content
             else:
                 msgs.append({"role": role, "content": content})
 
         body = "\n".join(f"[{fmt_ts(r['created_at'])}] {r['text']}" for r in pending)
-        if ocr_blocks:
-            body += "\n\n" + "\n\n".join(ocr_blocks)
+        if doc_blocks:
+            body += "\n\n" + "\n\n".join(doc_blocks)
         if notes:
             body += "\n\n" + "\n".join(notes)
         content: str | list = body
         if images:
             content = [{"type": "text", "text": body}] + [
-                {"type": "image_url", "image_url": u} for u in images[:MAX_IMAGES]
+                {"type": "image_url", "image_url": {"url": u}} for u in images[:MAX_IMAGES]
             ]
         if msgs[-1]["role"] == "user" and isinstance(msgs[-1]["content"], str) and isinstance(content, str):
             msgs[-1]["content"] += "\n" + content
@@ -267,13 +348,19 @@ class Agent:
             msgs.append({"role": "user", "content": content})
         return msgs
 
-    # -------------------------------------------------------------------- media
-    async def _prepare_attachments(self, handle: str, pending: list) -> tuple[list[str], list[str], list[str]]:
+    # -------------------------------------------------------------- attachments
+    async def _prepare_attachments(self, handle: str, pending: list):
+        """Route each attachment: images go to the vision model as they are, documents become text.
+
+        Returns (image data URLs, document text blocks, notes, images that still need a stored description).
+        """
         images: list[str] = []
-        ocr_blocks: list[str] = []
+        doc_blocks: list[str] = []
         notes: list[str] = []
+        to_describe: list[tuple] = []
+        user_text = " ".join(r["text"] for r in pending)
         atts = [a for r in pending for a in self.memory.attachments_for(r["id"])]
-        if not atts and IMAGE_HINT.search(" ".join(r["text"] for r in pending)):
+        if not atts and IMAGE_HINT.search(user_text):
             earlier = self.memory.recent_image_attachment(handle)
             if earlier:
                 atts = [earlier]
@@ -289,22 +376,29 @@ class Agent:
             if mime.startswith("image/"):
                 data_url = await asyncio.to_thread(to_data_url, path, mime)
                 images.append(data_url)
-                ocr = att["ocr_text"]
-                if ocr is None:
-                    ocr = await self._ocr(att, data_url, "image_url")
-            elif mime == "application/pdf":
-                data_url = "data:application/pdf;base64," + base64.b64encode(path.read_bytes()).decode()
-                ocr = att["ocr_text"]
-                if ocr is None:
-                    ocr = await self._ocr(att, data_url, "document_url")
-                if not ocr:
-                    notes.append(f"[attachment {name} is a PDF I could not read]")
+                if att["ocr_text"] is None:
+                    to_describe.append((att, data_url))
+                if self.docs.can_ocr and TEXT_HINT.search(user_text):
+                    text, source = await self.docs.read(path, mime)  # second opinion on dense text
+                    if text:
+                        doc_blocks.append(
+                            f'<attachment_text file="{name}" source="{source}">\n{text}\n</attachment_text>')
+            elif mime == "application/pdf" or mime.startswith("text/"):
+                text = att["ocr_text"]
+                source = "cached"
+                if text is None:
+                    text, source = await self.docs.read(path, mime)
+                    if text:
+                        self.memory.set_ocr(att["id"], att["message_id"], att["handle"], text)
+                if text:
+                    doc_blocks.append(f'<attachment_text file="{name}" source="{source}">\n{text}\n</attachment_text>')
+                elif self.docs.can_ocr:
+                    notes.append(f"[attachment {name} could not be read, even with OCR]")
+                else:
+                    notes.append(f"[attachment {name} has no readable text layer, and no OCR provider is set up]")
             else:
                 notes.append(f"[attachment {name} ({mime or 'unknown type'}) is not something I can read yet]")
-                continue
-            if ocr:
-                ocr_blocks.append(f'<image_text file="{name}">\n{ocr[:6000]}\n</image_text>')
-        return images, ocr_blocks, notes
+        return images, doc_blocks, notes, to_describe
 
     async def _ensure_downloaded(self, att):
         if att["status"] == "ready" and att["path"] and Path(att["path"]).exists():
@@ -326,26 +420,38 @@ class Agent:
         self.memory.mark_attachment(att["id"], status="ready", path=str(path), sha256=sha)
         return self.memory.get_attachment(att["id"])
 
-    async def _ocr(self, att, data_url: str, kind: str) -> str:
+    async def _describe(self, att, data_url: str) -> None:
+        """Store a durable text note for an image so it can be searched and recalled later."""
+        messages = [
+            {"role": "system", "content": DESCRIBE_PROMPT},
+            {"role": "user", "content": [{"type": "text", "text": "Write the note for this image."},
+                                         {"type": "image_url", "image_url": {"url": data_url}}]},
+        ]
         try:
-            text = await self.mistral.ocr(data_url, kind)
-        except MistralError as exc:
-            log.info("ocr skipped: %s", exc)
-            return ""
+            text, _ = await self.llm.chat(messages, self.s.vision_models, max_tokens=500, temperature=0.0)
+        except LLMError as exc:
+            log.info("image note skipped: %s", exc)
+            return
         self.memory.set_ocr(att["id"], att["message_id"], att["handle"], text)
-        return text
 
     # ------------------------------------------------------------ consolidation
-    def _kick_consolidation(self, handle: str) -> None:
+    def _kick_consolidation(self, handle: str, to_describe: list | None = None) -> None:
+        if to_describe:
+            self._to_describe.setdefault(handle, []).extend(to_describe)
         if handle in self._consolidating:
             return
         self._consolidating.add(handle)
 
         async def run() -> None:
             try:
-                await asyncio.sleep(1.5)
-                for _ in range(3):
-                    if not await self.memory.consolidate(handle):
+                await asyncio.sleep(1.0)
+                while True:
+                    for att, data_url in self._to_describe.pop(handle, []):  # image notes first, so memory sees them
+                        await self._describe(att, data_url)
+                    for _ in range(3):
+                        if not await self.memory.consolidate(handle):
+                            break
+                    if not self._to_describe.get(handle):  # more images queued while we worked
                         break
             except LLMUnavailable as exc:
                 log.info("consolidation postponed: %s", exc)

@@ -44,6 +44,25 @@ def _sips_to_jpeg(path: Path) -> bytes | None:
         return out.read_bytes()
 
 
+def fit_under(path: Path, limit: int) -> bytes | None:
+    """Return the image bytes at or under `limit`, shrinking through JPEG sizes if needed."""
+    raw = path.read_bytes()
+    if len(raw) <= limit and path.suffix.lower() in (".jpg", ".jpeg", ".png"):
+        return raw
+    with tempfile.TemporaryDirectory() as tmp:
+        for edge in (1600, 1280, 1024, 800):
+            out = Path(tmp) / f"o{edge}.jpg"
+            try:
+                run = subprocess.run(
+                    ["sips", "-s", "format", "jpeg", "-s", "formatOptions", "70", "-Z", str(edge), str(path),
+                     "--out", str(out)], capture_output=True, timeout=30)
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                return raw if len(raw) <= limit else None
+            if run.returncode == 0 and out.exists() and out.stat().st_size <= limit:
+                return out.read_bytes()
+    return None
+
+
 def to_data_url(path: Path, mime: str | None = None) -> str:
     """Return a data URL a vision model can read. HEIC and large images become JPEG."""
     mime = mime or mime_for_path(path)

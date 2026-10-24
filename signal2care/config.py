@@ -36,13 +36,13 @@ def mask(handle: str) -> str:
     return "***" + handle[-2:] if handle else "?"
 
 
-def _csv(name: str, default: str = "") -> list[str]:
-    return [p.strip() for p in os.environ.get(name, default).split(",") if p.strip()]
+def _csv(name: str) -> list[str]:
+    return [p.strip() for p in os.environ.get(name, "").split(",") if p.strip()]
 
 
-def _chain(*names_and_defaults: str) -> tuple[str, ...]:
+def _chain(*items: str) -> tuple[str, ...]:
     seen: list[str] = []
-    for item in names_and_defaults:
+    for item in items:
         for part in item.split(","):
             part = part.strip()
             if part and part not in seen:
@@ -52,14 +52,27 @@ def _chain(*names_and_defaults: str) -> tuple[str, ...]:
 
 @dataclass(frozen=True)
 class Settings:
-    mistral_api_key: str
-    chat_models: tuple[str, ...]
-    memory_models: tuple[str, ...]
+    # LLM (OpenAI-compatible endpoint, DeepInfra by default)
+    llm_base_url: str
+    llm_api_key: str
+    text_models: tuple[str, ...]      # used for turns without images
+    vision_models: tuple[str, ...]    # used for turns that include images
+    memory_models: tuple[str, ...]    # background note-taking
     embed_model: str
-    ocr_model: str
+    # Documents
+    ocr_provider: str                 # "ocrspace" or "none"; PDFs with a text layer never need it
+    ocr_api_key: str
+    # Decision model (Jev through OpenRouter). Not used by the chat path yet.
+    openrouter_api_key: str
+    jev_model: str
+    # Cloudflare mirror for the dashboard (optional)
+    cloud_url: str
+    ingest_token: str
+    # iMessage
     linq_api_key: str
     linq_from_phone: str
     allowed_numbers: frozenset[str]
+    # Receiver
     webhook_secret: str
     host: str
     port: int
@@ -70,18 +83,24 @@ class Settings:
 def load_settings() -> Settings:
     load_dotenv(ROOT / ".env")
     env = os.environ.get
-    chat = _chain(
-        env("MISTRAL_CHAT_MODEL", ""),
-        env("MISTRAL_CHAT_MODELS", ""),
-        "mistral-large-2512,mistral-medium-latest,mistral-small-latest",
-    )
-    memory = _chain(env("MISTRAL_MEMORY_MODEL", ""), "mistral-small-latest", *chat)
+    text = _chain(env("DEEPINFRA_TEXT_MODEL", ""), "deepseek-ai/DeepSeek-V4-Flash-0731",
+                  "deepseek-ai/DeepSeek-V4.1-Flash-1017")
+    vision = _chain(env("DEEPINFRA_VISION_MODEL", ""), "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+                    "deepseek-ai/DeepSeek-V4.1-Flash")
+    memory = _chain(env("DEEPINFRA_MEMORY_MODEL", ""), *text)
     return Settings(
-        mistral_api_key=env("MISTRAL_API_KEY", ""),
-        chat_models=chat,
+        llm_base_url=env("LLM_BASE_URL", "https://api.deepinfra.com/v1/openai"),
+        llm_api_key=env("DEEPINFRA_API_KEY", ""),
+        text_models=text,
+        vision_models=vision,
         memory_models=memory,
-        embed_model=env("MISTRAL_EMBED_MODEL", "mistral-embed"),
-        ocr_model=env("MISTRAL_OCR_MODEL", "mistral-ocr-latest"),
+        embed_model=env("DEEPINFRA_EMBED_MODEL", "BAAI/bge-m3"),
+        ocr_provider=env("OCR_PROVIDER", "ocrspace" if env("OCR_API_KEY") else "none").lower(),
+        ocr_api_key=env("OCR_API_KEY", ""),
+        openrouter_api_key=env("OPENROUTER_API_KEY", ""),
+        jev_model=env("JEV_MODEL", "typesafe/jev-1.14"),
+        cloud_url=env("CLOUD_URL", ""),
+        ingest_token=env("INGEST_TOKEN", ""),
         linq_api_key=env("LINQ_API_KEY", ""),
         linq_from_phone=env("LINQ_FROM_PHONE", ""),
         allowed_numbers=frozenset(n for n in map(normalize_phone, _csv("ALLOWED_NUMBERS")) if n),

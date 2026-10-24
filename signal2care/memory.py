@@ -23,7 +23,7 @@ from pathlib import Path
 
 from .config import Settings
 from .db import Database
-from .mistral import MistralClient, MistralError
+from .llm import LLMClient, LLMError, extract_json
 from .prompts import CONSOLIDATE_PROMPT
 from .textutil import fmt_ts, now_iso
 
@@ -76,9 +76,9 @@ def _rrf(*ranked: list[int], k: int = 60) -> list[int]:
 
 
 class Memory:
-    def __init__(self, db: Database, mistral: MistralClient, settings: Settings):
+    def __init__(self, db: Database, llm: LLMClient, settings: Settings):
         self.db = db
-        self.mistral = mistral
+        self.llm = llm
         self.s = settings
 
     # ------------------------------------------------------------------ users
@@ -162,6 +162,21 @@ class Memory:
     def attachments_for(self, message_id: str) -> list[sqlite3.Row]:
         with self.db.conn() as c:
             return c.execute("SELECT * FROM attachments WHERE message_id=? ORDER BY created_at", (message_id,)).fetchall()
+
+    def attachment_texts(self, message_ids: list[str]) -> dict[str, list[tuple[str, str]]]:
+        """Text we hold for attachments (document text, OCR, image notes), keyed by message id."""
+        if not message_ids:
+            return {}
+        out: dict[str, list[tuple[str, str]]] = {}
+        with self.db.conn() as c:
+            for i in range(0, len(message_ids), 90):
+                chunk = message_ids[i:i + 90]
+                marks = ",".join("?" * len(chunk))
+                for r in c.execute(
+                    f"SELECT message_id, filename, ocr_text FROM attachments WHERE message_id IN ({marks}) "
+                    "AND ocr_text IS NOT NULL AND ocr_text != '' ORDER BY created_at", chunk):
+                    out.setdefault(r["message_id"], []).append((r["filename"] or "file", r["ocr_text"]))
+        return out
 
     def get_attachment(self, att_id: str) -> sqlite3.Row | None:
         with self.db.conn() as c:
@@ -274,9 +289,9 @@ class Memory:
         ev_sem: list[tuple[int, sqlite3.Row]] = []
         if embedded >= SEMANTIC_MIN_EVENTS and query.strip():
             try:
-                qv = (await self.mistral.embed([query[:2000]]))[0]
+                qv = (await self.llm.embed([query[:2000]]))[0]
                 ev_sem = self._semantic(handle, qv)
-            except MistralError as exc:
+            except LLMError as exc:
                 log.info("semantic recall skipped: %s", exc)
 
         by_id = {r["id"]: r for r in ev_lex}
@@ -300,7 +315,7 @@ class Memory:
                 ocr = c.execute("SELECT ocr_text FROM attachments WHERE message_id=? AND ocr_text != '' LIMIT 1",
                                 (m["mid"],)).fetchone()
                 if ocr:
-                    text += f" [image text: {ocr['ocr_text'][:500]}]"
+                    text += f" [attachment text: {ocr['ocr_text'][:1500]}]"
                 shown.append({"who": "you" if m["direction"] == "in" else "me", "text": text, "at": m["created_at"]})
         return {
             "events": [{"text": e["text"], "when": e["when_hint"], "at": e["created_at"]} for e in events],
@@ -321,6 +336,8 @@ class Memory:
         scored = []
         for r in rows:
             v = _unpack(r["embedding"])
+            if len(v) != len(qa):  # stored with a different embedding model
+                continue
             n = _norm(v)
             if n:
                 scored.append((sum(map(mul, qa, v)) / (qn * n), r))
@@ -359,14 +376,12 @@ class Memory:
             + "\n\nPrevious summary:\n" + (prior["text"] if prior else "(none)")
             + "\n\nNew messages:\n" + "\n".join(lines)
         )
-        text, _ = await self.mistral.chat(
+        text, _ = await self.llm.chat(
             [{"role": "system", "content": CONSOLIDATE_PROMPT}, {"role": "user", "content": user_block}],
             self.s.memory_models, max_tokens=1800, temperature=0.0, json_mode=True,
         )
         try:
-            data = json.loads(text)
-            if not isinstance(data, dict):
-                raise ValueError("not an object")
+            data = extract_json(text)
         except (ValueError, TypeError) as exc:
             log.warning("consolidation returned unusable JSON (%s); batch will be retried", exc)
             return False
@@ -442,8 +457,8 @@ class Memory:
         if not rows:
             return
         try:
-            vecs = await self.mistral.embed([r["text"] for r in rows])
-        except MistralError as exc:
+            vecs = await self.llm.embed([r["text"] for r in rows])
+        except LLMError as exc:
             log.info("embedding skipped: %s", exc)
             return
         with self.db.conn() as c:
