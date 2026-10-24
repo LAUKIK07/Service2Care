@@ -58,6 +58,7 @@ async def lifespan(app: FastAPI):
     agent.tools = ToolBox(replay, engine, http)
     agent.demo = pipeline.chat_command
     sync.on_command = pipeline.command
+    sync.is_active = lambda: any(replay.state(p)["status"] == "running" for p in PERSONAS)
     sync.health_provider = lambda: {
         "ts": now_iso(), "send_alerts": engine.send_enabled, "jev": bool(jev), "jev_model": settings.jev_model,
         "text_model": settings.text_models[0], "vision_model": settings.vision_models[0],

@@ -45,8 +45,8 @@ class Pipeline:
         self.sync.push("series", {"persona": persona, "i": tick["i"], "ts": tick["ts"], "state": tick["state"],
                                   "quality": tick["quality"], "v": tick["v"]})
         self._pushed[persona] = max(self._pushed[persona], tick["i"])
-        self.sync.push("state", self.replay.state(persona))
-        if tick["ts"][14:16] == "45":
+        if tick["ts"][14:16] == "45":                  # once per simulated hour keeps D1 writes low
+            self.sync.push("state", self.replay.state(persona))
             self.sync.push("monitor", {"persona": persona, "ts": tick["ts"], "review": mon.last_review,
                                        "night": mon.last_night, "gap_hours": mon.gap_hours})
         if cands:
@@ -133,12 +133,22 @@ class Pipeline:
             return f"speed {st['speed']}"
         raise ValueError(f"unknown command {kind!r}")
 
+    def dashboard_link(self) -> str:
+        s = self.alerts.s
+        if not (s.dashboard_url and s.cloud_url and s.dash_token):
+            return "The dashboard is not configured yet."
+        from urllib.parse import quote
+        return (f"Your dashboard (opens already signed in, so keep this link to yourself): "
+                f"{s.dashboard_url}/#api={quote(s.cloud_url, safe='')}&k={s.dash_token}")
+
     async def chat_command(self, handle: str, word: str) -> str | None:
         """Typed iMessage controls: 'demo play', 'demo pause', 'demo status', 'demo reset', 'demo day 18', 'demo speed 6', 'demo alerts on'."""
         persona = self.alerts.persona_for(handle)
         if not persona:
             return None
         arg = word.removeprefix("demo ").strip()
+        if arg == "link":
+            return self.dashboard_link()
         if arg in ("play", "start", "resume"):
             await self.command({"type": "play", "persona": persona})
         elif arg in ("pause", "stop"):

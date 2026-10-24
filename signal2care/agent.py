@@ -35,7 +35,7 @@ RECALL_CMD = re.compile(
 FORGET_CMD = re.compile(r"forget (everything|all|it all)")
 FORGET_CONFIRM = re.compile(r"confirm forget( everything)?")
 # Typed controls for the simulated wearable replay (deterministic, no model involved).
-DEMO_CMD = re.compile(r"demo (play|start|resume|pause|stop|status|reset|day \d{1,2}|speed \d{1,2}(\.\d)?|alerts (on|off))")
+DEMO_CMD = re.compile(r"demo (play|start|resume|pause|stop|status|reset|day \d{1,2}|speed \d{1,2}(\.\d)?|alerts (on|off)|link)")
 IMAGE_HINT = re.compile(r"\b(photo|picture|image|screenshot|pic|selfie|receipt|scan|that one)\b", re.I)
 # When someone wants the text out of an image, OCR runs as well and the model gets both views.
 TEXT_HINT = re.compile(r"\b(read|scan|extract|transcribe|ocr|text|says?|written|handwrit\w*|copy|total|invoice|receipt)\b", re.I)

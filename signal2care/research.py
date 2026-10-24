@@ -1,6 +1,7 @@
 """Literature lookup restricted to one trusted source: PubMed (NIH). No arbitrary web pages are fetched."""
 from __future__ import annotations
 
+import html
 import logging
 import re
 
@@ -27,9 +28,9 @@ async def search_pubmed(http: httpx.AsyncClient, query: str, n: int = 3) -> list
         item = result.get(pid) or {}
         abstract = ""
         try:
-            a = await http.get(f"{BASE}/efetch.fcgi", params={"db": "pubmed", "id": pid, "rettype": "abstract",
-                                                              "retmode": "text"}, timeout=20)
-            abstract = re.sub(r"\s+", " ", a.text).strip()[:900]
+            a = await http.get(f"{BASE}/efetch.fcgi", params={"db": "pubmed", "id": pid, "retmode": "xml"}, timeout=20)
+            parts = re.findall(r"<AbstractText[^>]*>(.*?)</AbstractText>", a.text, re.S)
+            abstract = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", " ".join(parts)))).strip()[:900]
         except httpx.HTTPError:
             pass
         papers.append({"title": item.get("title"), "journal": item.get("source"),

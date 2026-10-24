@@ -17,8 +17,8 @@ log = logging.getLogger("s2c.cloud")
 
 BATCH = 300
 FLUSH_EVERY = 1.0
-POLL_EVERY = 1.5
-HEALTH_EVERY = 5.0
+HEALTH_EVERY = 10.0
+IDLE_EVERY = 5.0      # Workers free tier: 100k requests per day, so idle polling stays slow
 
 
 class CloudSync:
@@ -30,6 +30,8 @@ class CloudSync:
         self.buf: deque = deque(maxlen=40_000)
         self.health_provider = None      # () -> dict
         self.on_command = None           # async (cmd: dict) -> str
+        self.is_active = None            # () -> bool, true while a replay is running
+        self.fast_until = 0.0            # poll quickly for a while after the dashboard sends a command
         self.status = {"ok": None, "last_ok": None, "error": None, "pushed": 0, "dropped": 0}
 
     def push(self, kind: str, obj: dict) -> None:
@@ -65,6 +67,7 @@ class CloudSync:
         if r.status_code != 200:
             return
         for cmd in r.json().get("commands", []):
+            self.fast_until = time.monotonic() + 300
             try:
                 result = await self.on_command(cmd)
                 status = "done"
@@ -83,7 +86,8 @@ class CloudSync:
         delay = 0.0
         while True:
             try:
-                await asyncio.sleep(max(FLUSH_EVERY if delay == 0 else delay, 0.2))
+                busy = (self.is_active and self.is_active()) or time.monotonic() < self.fast_until
+                await asyncio.sleep(delay or (FLUSH_EVERY if busy else IDLE_EVERY))
                 if time.monotonic() - last_health >= HEALTH_EVERY and self.health_provider:
                     last_health = time.monotonic()
                     self.push("health", {**self.health_provider(), "cloud": {k: self.status[k] for k in ("pushed", "dropped")}})

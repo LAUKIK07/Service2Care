@@ -68,6 +68,8 @@ class Settings:
     # Cloudflare mirror for the dashboard (optional)
     cloud_url: str
     ingest_token: str
+    dash_token: str
+    dashboard_url: str
     # iMessage
     linq_api_key: str
     linq_from_phone: str
@@ -101,6 +103,8 @@ def load_settings() -> Settings:
         jev_model=env("JEV_MODEL", "typesafe/jev-1.14"),
         cloud_url=env("CLOUD_URL", ""),
         ingest_token=env("INGEST_TOKEN", ""),
+        dash_token=env("DASH_TOKEN", ""),
+        dashboard_url=env("DASHBOARD_URL", "").rstrip("/"),
         linq_api_key=env("LINQ_API_KEY", ""),
         linq_from_phone=env("LINQ_FROM_PHONE", ""),
         allowed_numbers=frozenset(n for n in map(normalize_phone, _csv("ALLOWED_NUMBERS")) if n),
