@@ -111,14 +111,16 @@ function bandFor(key) {
 const bandAt = (key, i) => bandFor(key)[Math.floor((((i % TICKS_PER_DAY) + TICKS_PER_DAY) % TICKS_PER_DAY) / 4)];
 
 function nights() {
+  // A night is a stretch of sleep ticks; awakenings of up to two hours inside it do not end the night.
   const out = [];
-  let run = 0, end = -1;
+  let asleep = 0, last = -1;
+  const close = () => { if (asleep >= 12) out.push({ end: last, hours: asleep / 4 }); asleep = 0; };
   for (let i = 0; i <= S.lastI; i++) {
     const t = S.ticks[i];
-    if (t && t.state === "sleep") { run++; end = i; }
-    else if (run) { if (run >= 12) out.push({ end, hours: run / 4 }); run = 0; }
+    if (t && t.state === "sleep") { if (asleep && i - last > 9) close(); asleep++; last = i; }
+    else if (asleep && i - last > 9) close();
   }
-  return out;                       // completed nights only
+  return out;                       // a night still in progress is not counted
 }
 
 function stepsToday() {
@@ -162,7 +164,7 @@ function render() {
 function renderBanner() {
   const el = $("#banner");
   let html = "";
-  if (S.preview) html = `<div class="banner info">${icon("info", 18)}<div><b>You're viewing a recorded demo run.</b> To control a live run, text <code>demo link</code> to the Signal2Care number and open the link it sends back.</div></div>`;
+  if (S.preview) html = `<div class="banner info">${icon("info", 18)}<div><b>You're viewing a recorded demo run.</b> It used the real monitor, Jev and language model, but no texts were actually sent and the two replies were scripted. To control a live run, text <code>demo link</code> to the Signal2Care number and open the link it sends back.</div></div>`;
   else if (!S.conn) html = "";
   else if (S.error === "auth") html = `<div class="banner bad">${icon("shield", 18)}<div><b>This link is no longer valid.</b> Text <code>demo link</code> to the Signal2Care number to get a fresh one.</div></div>`;
   else if (S.error === "network") html = `<div class="banner warn">${icon("info", 18)}<div><b>Can't reach the dashboard service.</b> Retrying automatically.</div></div>`;
@@ -314,9 +316,9 @@ function renderCards() {
     const st = cardStatus(key);
     const unit = key === "steps" ? "steps today" : m.unit;
     return `<button class="mcard" data-m="${key}" aria-label="${esc(m.label)} details" style="--c:${m.color}">
-      <span class="mc-top"><span class="mc-ic">${icon(m.icon, 18)}</span><span class="mc-title">${m.label}${m.extra ? `<em class="xtag" title="Not a field of the WHOOP API. Added as a synthetic channel for this demo.">extra signal</em>` : ""}</span><span class="badge ${st.cls}">${st.text}</span></span>
+      <span class="mc-top"><span class="mc-ic">${icon(m.icon, 18)}</span><span class="mc-title">${m.label}</span><span class="badge ${st.cls}">${st.text}</span></span>
       <span class="mc-val"><b>${d.value}</b><i>${d.value === "No signal" || d.value === "\u2013" ? "" : unit}</i></span>
-      <span class="mc-sub">${d.deltaText ? `<span class="delta ${d.deltaCls}">${d.deltaText}</span>` : ""}<span class="mut">${esc(d.sub)}</span></span>
+      <span class="mc-sub">${d.deltaText ? `<span class="delta ${d.deltaCls}">${d.deltaText}</span>` : ""}<span class="mut">${esc(d.sub)}</span>${m.extra ? `<em class="xtag" title="Not a field of the WHOOP API. Added as a synthetic channel for this demo.">extra signal</em>` : ""}</span>
       <span class="mc-spark">${d.spark || '<span class="mut">Waiting for data</span>'}</span>
     </button>`;
   }).join("");
@@ -630,4 +632,7 @@ async function boot() {
   render();
 }
 $("#drawer-scrim").addEventListener("click", closeDrawer);
-boot();
+boot().then(() => {
+  const m = new URLSearchParams(location.search).get("metric");        // shareable link to one signal
+  if (m && METRICS[m]) setTimeout(() => openDrawer(m), 400);
+});
