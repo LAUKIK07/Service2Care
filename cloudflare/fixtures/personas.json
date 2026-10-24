@@ -1,0 +1,68 @@
+{
+ "_note": "The people the dashboard can show. maya is the one linked to a phone. real-demo is a fixture: the loader copies Maya's readings under that id and drops the channels it does not list.",
+ "items": [
+  {
+   "k": "personas",
+   "d": {
+    "items": [
+     {
+      "id": "maya",
+      "name": "Maya",
+      "tag": "Runner",
+      "blurb": "Recreational runner with a regular schedule. Her story: an illness-like pattern, a low-oxygen night and a tracker dropout.",
+      "kind": "synthetic",
+      "source": "Seeded physiology simulator",
+      "license": "Invented",
+      "citation": "",
+      "channels": [],
+      "hue": "#FF385C"
+     },
+     {
+      "id": "daniel",
+      "name": "Daniel",
+      "tag": "Desk job",
+      "blurb": "Late, irregular schedule. His story: three short nights, then a stressful afternoon.",
+      "kind": "synthetic",
+      "source": "Seeded physiology simulator",
+      "license": "Invented",
+      "citation": "",
+      "channels": [],
+      "hue": "#7C5CFA"
+     },
+     {
+      "id": "priya",
+      "name": "Priya",
+      "tag": "Control",
+      "blurb": "A steady routine with nothing injected. She shows how quiet the system stays when nothing is wrong.",
+      "kind": "synthetic",
+      "source": "Seeded physiology simulator",
+      "license": "Invented",
+      "citation": "",
+      "channels": [],
+      "hue": "#0EA5E9"
+     },
+     {
+      "id": "real-demo",
+      "name": "Jordan",
+      "tag": "Public data",
+      "blurb": "One participant from a public wearable dataset (fixture for the dashboard, not a real recording).",
+      "kind": "real",
+      "source": "Example public wearable dataset (fixture)",
+      "license": "CC BY 4.0",
+      "citation": "Example et al. (2022). Fixture citation for dashboard testing.",
+      "channels": [
+       "heart_rate",
+       "hrv_rmssd",
+       "respiratory_rate",
+       "spo2",
+       "skin_temp",
+       "steps"
+      ],
+      "hue": "#14B8A6"
+     }
+    ],
+    "linked": "maya"
+   }
+  }
+ ]
+}

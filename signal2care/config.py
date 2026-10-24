@@ -70,6 +70,12 @@ class Settings:
     ingest_token: str
     dash_token: str
     dashboard_url: str
+    # Conversation and notification pacing
+    alert_min_gap_s: float       # least real time between two proactive alert texts to one person
+    story_idle_min: float        # a check-in conversation closes after this many quiet minutes
+    quiet_start: int             # local hour quiet hours begin (no proactive texts except urgent ones)
+    quiet_end: int
+    use_polls: bool              # tap-to-answer polls need poll votes delivered; the CLI relay does not deliver them
     # iMessage
     linq_api_key: str
     linq_from_phone: str
@@ -105,6 +111,11 @@ def load_settings() -> Settings:
         ingest_token=env("INGEST_TOKEN", ""),
         dash_token=env("DASH_TOKEN", ""),
         dashboard_url=env("DASHBOARD_URL", "").rstrip("/"),
+        alert_min_gap_s=float(env("ALERT_MIN_GAP_S", "120")),
+        story_idle_min=float(env("STORY_IDLE_MIN", "10")),
+        quiet_start=int(env("QUIET_START", "22")),
+        quiet_end=int(env("QUIET_END", "7")),
+        use_polls=env("USE_POLLS", "0") == "1",
         linq_api_key=env("LINQ_API_KEY", ""),
         linq_from_phone=env("LINQ_FROM_PHONE", ""),
         allowed_numbers=frozenset(n for n in map(normalize_phone, _csv("ALLOWED_NUMBERS")) if n),

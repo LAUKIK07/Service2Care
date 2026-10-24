@@ -114,7 +114,10 @@ class Monitor:
         quality = f"{len(ticks)}/{len(self.hour)} good samples"
         observed: dict[str, dict] = {}
         for m in DETECT:
-            value = stats.median(t["v"][m] for t in ticks)
+            seen = [t["v"][m] for t in ticks if t["v"].get(m) is not None]
+            if len(seen) < 3:
+                continue                                    # this device does not report the channel, or not enough of it this hour
+            value = stats.median(seen)
             key = (m, state, "sleep" if state == "sleep" else bucket(hod))
             base = self._baseline(key) if state != "active" else None
             if base and not (state == "sleep" and m in ("stress", "eda")):
@@ -198,14 +201,17 @@ class Monitor:
 
     def _close_night(self, night: list[dict], span: int, ts: str, silent: bool) -> list[Candidate]:
         good = [t for t in night if t["quality"] == "good"] or night
-        hr = sorted(t["v"]["heart_rate"] for t in good)
-        values = {
-            "sleep_hours": len(night) / 4.0,
-            "rhr_sleep": hr[max(0, int(len(hr) * 0.1))],
-            "hrv_sleep": stats.median(t["v"]["hrv_rmssd"] for t in good),
-        }
+        hr = sorted(t["v"]["heart_rate"] for t in good if t["v"].get("heart_rate") is not None)
+        hrv = [t["v"]["hrv_rmssd"] for t in good if t["v"].get("hrv_rmssd") is not None]
+        values = {"sleep_hours": len(night) / 4.0}
+        if len(hr) >= 6:
+            values["rhr_sleep"] = hr[max(0, int(len(hr) * 0.1))]
+        if len(hrv) >= 6:
+            values["hrv_sleep"] = stats.median(hrv)
         found: list[Candidate] = []
         for m in DAILY:
+            if m not in values:
+                continue
             past = list(self.daily_hist[m])
             if len(past) >= DAILY_MIN_HIST:
                 med, scale = stats.robust_baseline(past, m)

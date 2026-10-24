@@ -9,21 +9,10 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 
-from .agent import Agent
-from .alerts import AlertEngine
-from .cloud import CloudSync
 from .config import load_settings
-from .db import Database
-from .jev import JevClient
-from .linq import LinqClient, parse_inbound
-from .llm import LLMClient
-from .memory import Memory
-from .ocr import DocumentReader
-from .pipeline import Pipeline
-from .replay import Replay
-from .sim.personas import PERSONAS
-from .textutil import now_iso
-from .tools import ToolBox
+from .linq import parse_event
+from .stack import build
+from .registry import PERSONAS
 
 log = logging.getLogger("s2c.app")
 
@@ -39,32 +28,8 @@ async def lifespan(app: FastAPI):
     if not settings.allowed_numbers:
         raise RuntimeError("ALLOWED_NUMBERS is empty, so nobody could be answered")
     http = httpx.AsyncClient(limits=httpx.Limits(keepalive_expiry=5.0))  # avoid reusing stale connections
-    db = Database(settings.data_dir / "s2c.sqlite3")
-    llm = LLMClient(settings.llm_base_url, settings.llm_api_key, http, embed_model=settings.embed_model)
-    linq = LinqClient(settings.linq_api_key, http)
-    docs = DocumentReader(settings.ocr_provider, settings.ocr_api_key, http)
-    memory = Memory(db, llm, settings)
-    agent = Agent(settings, memory, llm, linq, docs)
-
-    jev = JevClient(settings.openrouter_api_key, http, settings.jev_model) if settings.openrouter_api_key else None
-    sync = CloudSync(settings.cloud_url, settings.ingest_token, http)
-    engine = AlertEngine(settings, db, llm, jev, sync)
-    pipeline = Pipeline(db, engine, sync)
-    replay = Replay(db, pipeline)
-    pipeline.replay = replay
-    engine.replay = replay
-    engine.say = agent.send_proactive
-    agent.alerts, agent.replay = engine, replay
-    agent.tools = ToolBox(replay, engine, http)
-    agent.demo = pipeline.chat_command
-    sync.on_command = pipeline.command
-    sync.is_active = lambda: any(replay.state(p)["status"] == "running" for p in PERSONAS)
-    sync.health_provider = lambda: {
-        "ts": now_iso(), "send_alerts": engine.send_enabled, "jev": bool(jev), "jev_model": settings.jev_model,
-        "text_model": settings.text_models[0], "vision_model": settings.vision_models[0],
-        "ocr": settings.ocr_provider if docs.can_ocr else "text-layer only",
-        "personas": {p: replay.state(p) for p in PERSONAS},
-    }
+    st = build(settings, http)
+    agent, pipeline, replay, sync, jev, docs = st.agent, st.pipeline, st.replay, st.sync, st.jev, st.docs
     pipeline.resync_all()
 
     app.state.settings = settings
@@ -109,9 +74,9 @@ async def linq_webhook(request: Request, k: str = "") -> dict:
     except Exception:
         raise HTTPException(status_code=400, detail="invalid json")
     log.info("webhook event_type=%s", body.get("event_type"))
-    inbound = parse_inbound(body)
-    if inbound:
-        task = asyncio.create_task(_handle(request.app, inbound))
+    event = parse_event(body)
+    if event:
+        task = asyncio.create_task(_handle(request.app, event))
         request.app.state.tasks.add(task)
         task.add_done_callback(request.app.state.tasks.discard)
     return {"ok": True}
@@ -136,8 +101,8 @@ async def internal_state(request: Request, k: str = "") -> dict:
     return {p: replay.state(p) for p in PERSONAS}
 
 
-async def _handle(app: FastAPI, inbound) -> None:
+async def _handle(app: FastAPI, event) -> None:
     try:
-        await app.state.agent.on_inbound(inbound)
+        await app.state.agent.on_event(event)
     except Exception:
         log.exception("failed to handle inbound message")

@@ -149,6 +149,42 @@ CREATE TABLE IF NOT EXISTS feed(
 );
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
 
+-- Every proactive send goes through the outbox first, so a retry or a restart can never send the same thing twice.
+CREATE TABLE IF NOT EXISTS outbox(
+  key TEXT PRIMARY KEY,
+  handle TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  message_id TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- Polls we sent that expect a tap: which question, and which option id means what.
+CREATE TABLE IF NOT EXISTS pending_polls(
+  message_id TEXT PRIMARY KEY,
+  handle TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  ref TEXT,
+  options TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  answered_at TEXT
+);
+
+-- Things the person asked us to double-check before we use them (for example a number read from a photo).
+CREATE TABLE IF NOT EXISTS pending_confirms(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  handle TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  source_message_id TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
   text, msg_id UNINDEXED, handle UNINDEXED, tokenize='porter unicode61'
 );
@@ -158,6 +194,34 @@ CREATE VIRTUAL TABLE IF NOT EXISTS events_fts USING fts5(
 """
 
 
+# Columns added after the first release. Applied once, in order, so existing databases keep working.
+MIGRATIONS = [
+    ("users", "consent", "INTEGER NOT NULL DEFAULT 0"),            # explicit START before any proactive text
+    ("users", "consent_at", "TEXT"),
+    ("users", "onboarding", "TEXT NOT NULL DEFAULT 'new'"),         # new | consent | profile | done
+    ("users", "ob_step", "INTEGER NOT NULL DEFAULT 0"),
+    ("users", "paused_until", "TEXT"),
+    ("users", "quiet_off", "INTEGER NOT NULL DEFAULT 0"),
+    ("users", "last_ref", "TEXT"),                                  # items the last 'what do you remember' listed
+    ("messages", "alert_id", "INTEGER"),                            # conversation -> event link
+    ("messages", "kind", "TEXT NOT NULL DEFAULT 'text'"),
+    ("messages", "delivery", "TEXT"),
+    ("messages", "reply_to", "TEXT"),
+    ("alerts", "event_id", "TEXT"),
+    ("alerts", "receipt", "TEXT"),
+    ("alerts", "question_kind", "TEXT"),
+    ("alerts", "poll_message_id", "TEXT"),
+    ("alerts", "delivery", "TEXT"),
+    ("annotations", "event_id", "TEXT"),
+    ("annotations", "status", "TEXT NOT NULL DEFAULT 'closed'"),    # open while the conversation window is running
+    ("annotations", "opened_at", "TEXT"),
+    ("annotations", "closes_at", "TEXT"),
+    ("annotations", "qa", "TEXT"),
+    ("annotations", "versions", "TEXT"),
+    ("facts", "origin", "TEXT NOT NULL DEFAULT 'chat'"),            # chat | onboarding | correction | photo
+]
+
+
 class Database:
     def __init__(self, path: Path):
         self.path = path
@@ -165,6 +229,12 @@ class Database:
         os.chmod(path.parent, 0o700)
         with self.conn() as c:
             c.executescript(SCHEMA)
+            for table, column, ddl in MIGRATIONS:
+                have = {r["name"] for r in c.execute(f"PRAGMA table_info({table})")}
+                if column not in have:
+                    c.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+            c.execute("CREATE INDEX IF NOT EXISTS idx_messages_alert ON messages(alert_id)")
+            c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_alerts_event ON alerts(event_id) WHERE event_id IS NOT NULL")
         os.chmod(path, 0o600)
 
     @contextmanager

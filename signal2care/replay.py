@@ -12,8 +12,8 @@ import logging
 
 from .db import Database
 from .monitor import Monitor
-from .sim.generator import TICKS_PER_DAY, generate
-from .sim.personas import PERSONAS
+from .registry import PERSONAS
+from .sim.generator import TICKS_PER_DAY
 from .textutil import now_iso
 
 log = logging.getLogger("s2c.replay")
@@ -31,7 +31,7 @@ class Replay:
     # ------------------------------------------------------------------ access
     def ticks(self, persona: str) -> list[dict]:
         if persona not in self._ticks:
-            self._ticks[persona] = generate(PERSONAS[persona])
+            self._ticks[persona] = PERSONAS.ticks(persona)
         return self._ticks[persona]
 
     def monitor(self, persona: str) -> Monitor:
