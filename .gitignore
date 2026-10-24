@@ -1,0 +1,19 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# runtime data (message history, attachments, memory)
+data/
+*.sqlite3
+*.db
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# os
+.DS_Store
