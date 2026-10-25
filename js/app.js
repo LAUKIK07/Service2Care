@@ -216,7 +216,7 @@ function renderHero() {
       <div class="seg" role="group" aria-label="Replay speed">${SPEEDS.map(([v, n, tip]) => `<button data-speed="${v}" aria-pressed="${nearest[0] === v}" title="${tip}" ${offline ? "disabled" : ""}>${n}</button>`).join("")}</div>
       <label class="switch" title="Off: alerts are drafted and shown here but nothing is texted"><input type="checkbox" id="sendalerts" ${S.sendAlerts ? "checked" : ""} ${offline ? "disabled" : ""}><span class="knob"></span><span class="sl">${icon("chat", 16)} Text me alerts</span></label>
     </div>
-    <p class="hint">${S.sendAlerts ? "Detected changes are texted from the Signal2Care number. Reply there and your words land on the chart." : "Alert texts are off. Detected changes are drafted here and nothing is sent."}${p.id !== "maya" ? " Only Maya is linked to a phone; other people's alerts stay on this page." : ""}</p>`;
+    <p class="hint">${S.sendAlerts ? "Detected changes are texted from the Signal2Care number. Reply there and your words land on the chart." : "Alert texts are off. Detected changes are drafted here and nothing is sent."}${p.id !== "maya" ? " Only Arya is linked to a phone; other people's alerts stay on this page." : ""}</p>`;
   const el = $("#hero");
   if (el.dataset.k !== html) {
     el.dataset.k = html;
