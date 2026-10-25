@@ -32,7 +32,7 @@ npm run deploy                # prints https://signal2care-api.<your-subdomain>.
 CLOUD_URL=https://signal2care-api.<your-subdomain>.workers.dev
 INGEST_TOKEN=<same value as the Worker secret>
 DASH_TOKEN=<same value as the Worker secret>
-DASHBOARD_URL=https://laukik07.github.io/Service2Care
+DASHBOARD_URL=https://laukik07.github.io/Signal2Care
 ```
 
 `ALLOWED_ORIGINS` in `wrangler.toml` must include the origin that serves the dashboard.

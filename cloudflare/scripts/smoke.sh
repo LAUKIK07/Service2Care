@@ -159,7 +159,7 @@ node - > "$TMP/full.json" <<'JS'
 const P = "smoke-test", A1 = 900001, A2 = 900002, A3 = 900003;
 const base = (id, name, tag, kind, hue) => ({ id, name, tag, blurb: `${name} (test)`, kind, source: kind === "real" ? "Example public dataset" : "Seeded physiology simulator",
   license: kind === "real" ? "CC BY 4.0" : "Invented", citation: kind === "real" ? "Doe et al. 2022" : "", channels: kind === "real" ? ["heart_rate", "skin_temp"] : [], hue });
-const personas = { items: [base("maya", "Maya", "Runner", "synthetic", "#FF385C"), base("daniel", "Daniel", "Desk job", "synthetic", "#7C5CFA"),
+const personas = { items: [base("maya", "Arya", "Runner", "synthetic", "#FF385C"), base("daniel", "Daniel", "Desk job", "synthetic", "#7C5CFA"),
   base("priya", "Priya", "Control", "synthetic", "#0EA5E9"), base(P, "Smoke", "Real data", "real", "#14B8A6")], linked: P };
 const receipt = (eid) => ({ event_id: eid, metric: "skin_temp", kind: "hourly", context: "sleep",
   window: { started: "2026-10-20T08:00", detected: "2026-10-20T10:00", hours: 3, quality: "good" },
@@ -366,7 +366,7 @@ ingest "$TMP/cleanup.json"; expect_code "remove the test person's rows" 200
 node -e '
 const before = JSON.parse(process.argv[1] || "[]"), linked = process.argv[2] === "null" ? null : process.argv[2];
 const base = (id, name, tag, hue) => ({ id, name, tag, blurb: "", kind: "synthetic", source: "Seeded physiology simulator", license: "Invented", citation: "", channels: [], hue });
-const items = before.length ? before : [base("maya", "Maya", "Runner", "#FF385C"), base("daniel", "Daniel", "Desk job", "#7C5CFA"), base("priya", "Priya", "Control", "#0EA5E9")];
+const items = before.length ? before : [base("maya", "Arya", "Runner", "#FF385C"), base("daniel", "Daniel", "Desk job", "#7C5CFA"), base("priya", "Priya", "Control", "#0EA5E9")];
 console.log(JSON.stringify({ items: [{ k: "personas", d: { items, linked } }, { k: "setting", d: { key: "send_alerts", value: "0" } }] }));
 ' "$BEFORE_LIST" "$BEFORE_LINKED" | put restore
 ingest "$TMP/restore.json"; expect_code "restore the persona list" 200

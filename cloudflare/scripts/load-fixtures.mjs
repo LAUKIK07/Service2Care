@@ -8,9 +8,9 @@
 //   python3 -m http.server 8080 --directory ../dashboard                     (another terminal)
 //   open http://127.0.0.1:8080/#api=http%3A%2F%2F127.0.0.1%3A8788&k=<DASH_TOKEN from .dev.vars>
 //
-// What is loaded: the persona list (fixtures/personas.json), Maya's readings, monitor and feed from dashboard/sample.json
-// (read only), Maya's alerts and stories (fixtures/stories-maya.json), her health record (fixtures/profile-maya.json), a drafted alert for Daniel,
-// and a "real data" person (real-demo) made from Maya's readings with some channels removed.
+// What is loaded: the persona list (fixtures/personas.json), Arya's readings, monitor and feed from dashboard/sample.json
+// (read only), Arya's alerts and stories (fixtures/stories-maya.json), her health record (fixtures/profile-maya.json), a drafted alert for Daniel,
+// and a "real data" person (real-demo) made from Arya's readings with some channels removed.
 // Times written as "@NOW-12m" / "@NOW+6m" in the fixtures are replaced with real times, so the open story's window closes a few minutes after loading.
 // --heartbeat keeps posting the brain's health every 10 s so the dashboard shows "Monitor online" until you press Ctrl-C.
 //

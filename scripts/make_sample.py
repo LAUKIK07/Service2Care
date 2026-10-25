@@ -1,4 +1,4 @@
-"""Record a full simulated run of Maya into dashboard/sample.json, the preview shown to visitors without a live link.
+"""Record a full simulated run of Arya into dashboard/sample.json, the preview shown to visitors without a live link.
 
 The monitor, Jev and the language model are the real ones. No iMessage is sent. Two replies are scripted
 (a tracker on a charger, and a run plus a bad night) so the preview can show how replies are attached to the chart.

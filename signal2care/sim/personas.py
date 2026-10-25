@@ -54,7 +54,7 @@ class Persona:
 
 PERSONAS: dict[str, Persona] = {
     "maya": Persona(
-        id="maya", name="Maya (runner)", seed=11, linked=True,
+        id="maya", name="Arya (runner)", seed=11, linked=True,
         description="Recreational runner, regular schedule. A viral-illness-like pattern starts on day 19, "
                     "and a night of lower blood oxygen on day 24.",
         sleep_hr=52, awake_hr=66, hrv=78, resp=14.2, spo2=97.5, temp=33.4, bp_sys=112, bp_dia=70,
