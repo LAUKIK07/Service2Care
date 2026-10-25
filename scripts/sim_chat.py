@@ -259,6 +259,12 @@ async def main() -> None:
         await st.messenger.say(handle, "dup test", key="dup-1")
         check("a repeated send with the same key is not sent twice", len(linq.out) - n_before == 1, str(len(linq.out) - n_before))
 
+        save = os.environ.get("SAVE_CARDS")           # optional: keep the cards that were "sent", for the slides
+        if save:
+            Path(save).mkdir(parents=True, exist_ok=True)
+            for n, r in enumerate(x for x in linq.out if x.get("png_bytes")):
+                tag = "alert" if (r.get("key") or "").startswith("alert:") else "closing" if (r.get("key") or "").startswith("close:") else "other"
+                (Path(save) / f"{n:02d}_{tag}.png").write_bytes(r["png_bytes"])
         passed = sum(1 for _, ok, _ in results if ok)
         print(f"\n{passed}/{len(results)} checks passed")
         for name, ok, detail in results:

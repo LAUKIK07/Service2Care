@@ -78,7 +78,7 @@ export const ALERT_LABELS = {
 
 // Fallback for preview mode and for older payloads that carry no `personas` list. The live list comes from the service.
 export const PERSONAS = {
-  maya: { name: "Maya", tag: "Runner", blurb: "Recreational runner with a regular schedule. Her story: an illness-like pattern, a low-oxygen night and a tracker dropout.", hue: "#FF385C" },
+  maya: { name: "Arya", tag: "Runner", blurb: "Recreational runner with a regular schedule. Her story: an illness-like pattern, a low-oxygen night and a tracker dropout.", hue: "#FF385C" },
   daniel: { name: "Daniel", tag: "Desk job", blurb: "Late, irregular schedule. His story: three short nights, then a stressful afternoon.", hue: "#7C5CFA" },
   priya: { name: "Priya", tag: "Control", blurb: "A steady routine with nothing injected. She shows how quiet the system stays when nothing is wrong.", hue: "#0EA5E9" },
 };

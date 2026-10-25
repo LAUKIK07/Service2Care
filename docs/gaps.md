@@ -9,7 +9,7 @@ Written after the first complete run of the flow: replay → monitor → Jev →
 |---|---|
 | False alert candidates from the monitor on clean data | 0.17 per 28-day run, over 60 runs (20 new seeds × 3 baselines), after raising the onset threshold. It was 0.42 before. |
 | Planned events found (10 seeds each) | Illness-like pattern 10/10 (median 3.2 h after onset). Low-oxygen night 10/10 (1.8 h). Tracker dropout 10/10 (1.8 h). Stress afternoon 10/10 (1.8 h). Short sleep 6/10. |
-| Texts actually sent in the full flow (one seed) | Maya 4, Daniel 3 (drafted), Priya 0. |
+| Texts actually sent in the full flow (one seed) | Arya 4, Daniel 3 (drafted), Priya 0. |
 | Tool calling on both DeepSeek models | Works. |
 | Worker auth | Ingest token is rejected on dashboard routes and the other way round. Unknown origins get no CORS header. |
 

@@ -64,7 +64,7 @@ async def main() -> None:
             await step("5 threaded reply to message 1", linq.send(handle, [{"type": "text", "value": "Test 5 of 6: this is a reply attached to test 1."}],
                                                                  chat_id=chat_id, reply_to=mid, idempotency_key=f"probe-{run}-5"))
         await asyncio.sleep(1)
-        await step("6 rich link preview", linq.send_link(handle, "https://laukik07.github.io/Service2Care/", chat_id=chat_id, idempotency_key=f"probe-{run}-6"))
+        await step("6 rich link preview", linq.send_link(handle, "https://laukik07.github.io/Signal2Care/", chat_id=chat_id, idempotency_key=f"probe-{run}-6"))
         await step("   mark chat read", linq.mark_read(chat_id))
         await step("   typing on", linq.typing(chat_id, True))
         await step("   typing off", linq.typing(chat_id, False))

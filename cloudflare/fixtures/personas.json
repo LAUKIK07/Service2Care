@@ -1,5 +1,5 @@
 {
- "_note": "The people the dashboard can show. maya is the one linked to a phone. real-demo is a fixture: the loader copies Maya's readings under that id and drops the channels it does not list.",
+ "_note": "The people the dashboard can show. maya is the one linked to a phone. real-demo is a fixture: the loader copies Arya's readings under that id and drops the channels it does not list.",
  "items": [
   {
    "k": "personas",
@@ -7,7 +7,7 @@
     "items": [
      {
       "id": "maya",
-      "name": "Maya",
+      "name": "Arya",
       "tag": "Runner",
       "blurb": "Recreational runner with a regular schedule. Her story: an illness-like pattern, a low-oxygen night and a tracker dropout.",
       "kind": "synthetic",

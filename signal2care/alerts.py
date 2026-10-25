@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from datetime import datetime, timedelta
 
@@ -351,7 +352,8 @@ class AlertEngine:
 
     # ------------------------------------------------------------------ handling
     def _event_id(self, cand: Candidate) -> str:
-        base = f"evt-{cand.persona}-{cand.started.replace('-', '').replace(':', '').replace('T', '')}-{cand.metric}"
+        who = re.sub(r"[^a-z0-9]+", "", PERSONAS[cand.persona].name.lower()) or cand.persona
+        base = f"evt-{who}-{cand.started.replace('-', '').replace(':', '').replace('T', '')}-{cand.metric}"
         with self.db.conn() as c:
             n = c.execute("SELECT COUNT(*) n FROM alerts WHERE event_id=? OR event_id LIKE ?", (base, base + "-%")).fetchone()["n"]
         return base if n == 0 else f"{base}-{n + 1}"

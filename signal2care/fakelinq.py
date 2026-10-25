@@ -39,6 +39,7 @@ class FakeLinq:
             parts.append({"type": "text", "value": caption, **({"text_decorations": [{"range": list(r), "style": "bold"} for r in bold]} if bold else {})})
         resp = await self.send(handle, parts, chat_id=chat_id, reply_to=reply_to, idempotency_key=idempotency_key)
         self.out[-1]["png"] = len(png)
+        self.out[-1]["png_bytes"] = png
         return resp
 
     async def react(self, message_id, kind, *, emoji=None, remove=False, part_index=0):
